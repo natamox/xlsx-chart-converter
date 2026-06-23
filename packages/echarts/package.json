@@ -1,0 +1,31 @@
+{
+  "name": "@natamox/excel-chart-echarts",
+  "version": "0.1.0",
+  "description": "ECharts SSR SVG renderer adapter for excel-chart Chart IR.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@natamox/excel-chart-core": "workspace:*",
+    "echarts": "^6.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

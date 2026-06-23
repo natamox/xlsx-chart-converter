@@ -1,0 +1,28 @@
+{
+  "name": "excel-chart-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r --sort run build",
+    "check": "pnpm run lint && pnpm run test && pnpm run typecheck && pnpm run build",
+    "clean": "pnpm -r run clean && rm -rf coverage dist",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "pnpm --filter @natamox/excel-chart-core build && pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.30.0",
+    "pixelmatch": "^7.1.0",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.35.0",
+    "vitest": "^4.1.9"
+  }
+}

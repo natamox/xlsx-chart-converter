@@ -1,0 +1,30 @@
+{
+  "name": "@natamox/excel-chart-svg",
+  "version": "0.1.0",
+  "description": "SVG sanitizing, ID prefixing, and accessibility post-processing for excel-chart.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@natamox/excel-chart-core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

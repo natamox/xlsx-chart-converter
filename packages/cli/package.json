@@ -1,0 +1,30 @@
+{
+  "name": "@natamox/excel-chart-cli",
+  "version": "0.1.0",
+  "description": "CLI for inspecting and exporting Excel OOXML charts.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "bin": {
+    "excel-chart": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@natamox/excel-chart-core": "workspace:*",
+    "@natamox/excel-chart-resvg": "workspace:*",
+    "@natamox/excel-chart-echarts": "workspace:*",
+    "@natamox/excel-chart-svg": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
