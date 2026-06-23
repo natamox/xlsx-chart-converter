@@ -49,6 +49,10 @@ resvg -> core render types
 cli -> core + echarts + svg + resvg
 ```
 
+## Architecture
+
+See [docs/architecture.md](docs/architecture.md) for the repository-level architecture, package boundaries, runtime flow, milestones, and testing strategy.
+
 ## Public API Draft
 
 ```ts
