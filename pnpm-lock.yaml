@@ -35,16 +35,16 @@ importers:
 
   packages/cli:
     dependencies:
-      '@natamox/excel-chart-core':
+      '@natamox/xlsx-chart-converter-core':
         specifier: workspace:*
         version: link:../core
-      '@natamox/excel-chart-echarts':
+      '@natamox/xlsx-chart-converter-echarts':
         specifier: workspace:*
         version: link:../echarts
-      '@natamox/excel-chart-resvg':
+      '@natamox/xlsx-chart-converter-resvg':
         specifier: workspace:*
         version: link:../resvg
-      '@natamox/excel-chart-svg':
+      '@natamox/xlsx-chart-converter-svg':
         specifier: workspace:*
         version: link:../svg
 
@@ -65,10 +65,10 @@ importers:
 
   packages/echarts:
     dependencies:
-      '@natamox/excel-chart-core':
+      '@natamox/xlsx-chart-converter-core':
         specifier: workspace:*
         version: link:../core
-      '@natamox/excel-chart-svg':
+      '@natamox/xlsx-chart-converter-svg':
         specifier: workspace:*
         version: link:../svg
       echarts:
@@ -77,7 +77,7 @@ importers:
 
   packages/resvg:
     dependencies:
-      '@natamox/excel-chart-core':
+      '@natamox/xlsx-chart-converter-core':
         specifier: workspace:*
         version: link:../core
       '@resvg/resvg-js':
@@ -86,7 +86,7 @@ importers:
 
   packages/svg:
     dependencies:
-      '@natamox/excel-chart-core':
+      '@natamox/xlsx-chart-converter-core':
         specifier: workspace:*
         version: link:../core
 

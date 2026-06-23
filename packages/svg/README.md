@@ -1,13 +1,13 @@
-# @natamox/excel-chart-svg
+# @natamox/xlsx-chart-converter-svg
 
-SVG post-processing helpers for excel-chart renderer output.
+SVG post-processing helpers for xlsx-chart-converter renderer output.
 
 This package owns SVG sanitizing, ID prefixing, and accessibility metadata helpers. It stays separate from renderers so SVG safety and normalization can be reused.
 
 ## Usage
 
 ```ts
-import { addSvgAccessibility, prefixSvgIds, sanitizeSvg } from '@natamox/excel-chart-svg';
+import { addSvgAccessibility, prefixSvgIds, sanitizeSvg } from '@natamox/xlsx-chart-converter-svg';
 
 const safeSvg = addSvgAccessibility(
   prefixSvgIds(sanitizeSvg(svg), 'chart-'),

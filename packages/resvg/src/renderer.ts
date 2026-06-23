@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 import { Resvg } from '@resvg/resvg-js';
 
-import type { Diagnostic, PngRenderer, RenderContext } from '@natamox/excel-chart-core';
+import type { Diagnostic, PngRenderer, RenderContext } from '@natamox/xlsx-chart-converter-core';
 
 export interface ResvgPngRendererOptions {
   readonly defaultBackground?: string;

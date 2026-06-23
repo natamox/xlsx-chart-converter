@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EChartsSvgRenderer } from '../src/index.js';
 
-import type { ChartModel } from '@natamox/excel-chart-core';
+import type { ChartModel } from '@natamox/xlsx-chart-converter-core';
 
 describe('EChartsSvgRenderer', () => {
   it('renders sanitized accessible SVG through the SSR adapter', async () => {

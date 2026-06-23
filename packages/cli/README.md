@@ -1,4 +1,4 @@
-# @natamox/excel-chart-cli
+# @natamox/xlsx-chart-converter-cli
 
 Command-line interface for listing, inspecting, and exporting Excel OOXML charts.
 
@@ -7,11 +7,11 @@ The CLI wires together the core package, ECharts SVG rendering, SVG post-process
 ## Usage
 
 ```bash
-excel-chart list report.xlsx
-excel-chart list report.xlsx --json
-excel-chart inspect report.xlsx chart-1 --data-mode chart-cache-first
-excel-chart export report.xlsx --chart all --format svg --out ./charts
-excel-chart export report.xlsx --chart all --format png --out ./charts --scale 2
+xlsx-chart-converter list report.xlsx
+xlsx-chart-converter list report.xlsx --json
+xlsx-chart-converter inspect report.xlsx chart-1 --data-mode chart-cache-first
+xlsx-chart-converter export report.xlsx --chart all --format svg --out ./charts
+xlsx-chart-converter export report.xlsx --chart all --format png --out ./charts --scale 2
 ```
 
 ## Commands

@@ -1,14 +1,14 @@
-# @natamox/excel-chart-echarts
+# @natamox/xlsx-chart-converter-echarts
 
-ECharts SSR adapter for rendering excel-chart `ChartModel` IR to SVG.
+ECharts SSR adapter for rendering xlsx-chart-converter `ChartModel` IR to SVG.
 
-This package depends on `@natamox/excel-chart-core` for Chart IR and renderer interfaces, `@natamox/excel-chart-svg` for post-processing, and `echarts` for server-side SVG rendering.
+This package depends on `@natamox/xlsx-chart-converter-core` for Chart IR and renderer interfaces, `@natamox/xlsx-chart-converter-svg` for post-processing, and `echarts` for server-side SVG rendering.
 
 ## Usage
 
 ```ts
-import { openWorkbook } from '@natamox/excel-chart-core';
-import { EChartsSvgRenderer } from '@natamox/excel-chart-echarts';
+import { openWorkbook } from '@natamox/xlsx-chart-converter-core';
+import { EChartsSvgRenderer } from '@natamox/xlsx-chart-converter-echarts';
 
 const workbook = await openWorkbook(
   { path: 'report.xlsx' },

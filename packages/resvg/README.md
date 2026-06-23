@@ -1,15 +1,15 @@
-# @natamox/excel-chart-resvg
+# @natamox/xlsx-chart-converter-resvg
 
-resvg adapter for rasterizing processed excel-chart SVG output to PNG.
+resvg adapter for rasterizing processed xlsx-chart-converter SVG output to PNG.
 
-This package depends on `@natamox/excel-chart-core` for PNG renderer interfaces and on `@resvg/resvg-js` for rasterization.
+This package depends on `@natamox/xlsx-chart-converter-core` for PNG renderer interfaces and on `@resvg/resvg-js` for rasterization.
 
 ## Usage
 
 ```ts
-import { openWorkbook } from '@natamox/excel-chart-core';
-import { EChartsSvgRenderer } from '@natamox/excel-chart-echarts';
-import { ResvgPngRenderer } from '@natamox/excel-chart-resvg';
+import { openWorkbook } from '@natamox/xlsx-chart-converter-core';
+import { EChartsSvgRenderer } from '@natamox/xlsx-chart-converter-echarts';
+import { ResvgPngRenderer } from '@natamox/xlsx-chart-converter-resvg';
 
 const workbook = await openWorkbook(
   { path: 'report.xlsx' },

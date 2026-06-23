@@ -1,5 +1,5 @@
 {
-  "name": "excel-chart-workspace",
+  "name": "xlsx-chart-converter-workspace",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "pnpm --filter @natamox/excel-chart-core --filter @natamox/excel-chart-echarts --filter @natamox/excel-chart-svg --filter @natamox/excel-chart-resvg build && pnpm -r typecheck"
+    "typecheck": "pnpm --filter @natamox/xlsx-chart-converter-core --filter @natamox/xlsx-chart-converter-echarts --filter @natamox/xlsx-chart-converter-svg --filter @natamox/xlsx-chart-converter-resvg build && pnpm -r typecheck"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",

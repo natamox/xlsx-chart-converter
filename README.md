@@ -1,4 +1,4 @@
-# excel-chart
+# xlsx-chart-converter
 
 Node.js workspace for discovering, parsing, inspecting, and rendering Excel OOXML charts from `.xlsx` and `.xlsm` workbooks.
 
@@ -44,7 +44,7 @@ packages/
   echarts/   # ECharts server-side SVG renderer for Chart IR
   svg/       # SVG sanitizing, ID prefixing, accessibility post-processing
   resvg/     # resvg PNG rasterization adapter
-  cli/       # excel-chart command-line interface
+  cli/       # xlsx-chart-converter command-line interface
 fixtures/    # Apache POI workbook corpus and regression fixtures
 scripts/     # local QA/export helpers
 output/      # generated previews, ignored by git
@@ -63,9 +63,9 @@ cli       -> core + echarts + svg + resvg
 ## Library Usage
 
 ```ts
-import { openWorkbook } from '@natamox/excel-chart-core';
-import { EChartsSvgRenderer } from '@natamox/excel-chart-echarts';
-import { ResvgPngRenderer } from '@natamox/excel-chart-resvg';
+import { openWorkbook } from '@natamox/xlsx-chart-converter-core';
+import { EChartsSvgRenderer } from '@natamox/xlsx-chart-converter-echarts';
+import { ResvgPngRenderer } from '@natamox/xlsx-chart-converter-resvg';
 
 const workbook = await openWorkbook(
   { path: 'report.xlsx' },
@@ -95,10 +95,10 @@ When rendering without an SVG renderer, `core` returns a simple fallback SVG. Pr
 ## CLI
 
 ```bash
-excel-chart list report.xlsx --json
-excel-chart inspect report.xlsx chart-1 --data-mode chart-cache-first
-excel-chart export report.xlsx --chart all --format svg --out ./charts
-excel-chart export report.xlsx --chart all --format png --out ./charts --scale 2
+xlsx-chart-converter list report.xlsx --json
+xlsx-chart-converter inspect report.xlsx chart-1 --data-mode chart-cache-first
+xlsx-chart-converter export report.xlsx --chart all --format svg --out ./charts
+xlsx-chart-converter export report.xlsx --chart all --format png --out ./charts --scale 2
 ```
 
 The CLI is implemented for list, inspect, and export workflows. It uses the same core facade and renderer adapters as library callers.

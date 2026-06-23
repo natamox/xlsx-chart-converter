@@ -1,5 +1,5 @@
 {
-  "name": "@natamox/excel-chart-core",
+  "name": "@natamox/xlsx-chart-converter-core",
   "version": "0.1.0",
   "description": "Core OOXML chart discovery, parsing, IR, diagnostics, and facade types.",
   "type": "module",

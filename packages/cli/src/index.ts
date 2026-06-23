@@ -3,19 +3,19 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { EChartsSvgRenderer } from '@natamox/excel-chart-echarts';
-import { openWorkbook } from '@natamox/excel-chart-core';
-import { ResvgPngRenderer } from '@natamox/excel-chart-resvg';
-import { sanitizeSvg } from '@natamox/excel-chart-svg';
+import { EChartsSvgRenderer } from '@natamox/xlsx-chart-converter-echarts';
+import { openWorkbook } from '@natamox/xlsx-chart-converter-core';
+import { ResvgPngRenderer } from '@natamox/xlsx-chart-converter-resvg';
+import { sanitizeSvg } from '@natamox/xlsx-chart-converter-svg';
 
-import type { DataMode, RenderFormat } from '@natamox/excel-chart-core';
+import type { DataMode, RenderFormat } from '@natamox/xlsx-chart-converter-core';
 
-const help = `excel-chart
+const help = `xlsx-chart-converter
 
 Usage:
-  excel-chart list <file> [--json]
-  excel-chart inspect <file> <chart-id> [--data-mode <mode>]
-  excel-chart export <file> --chart <id|name|all> --format <svg|png> --out <dir> [--scale <n>] [--data-mode <mode>]
+  xlsx-chart-converter list <file> [--json]
+  xlsx-chart-converter inspect <file> <chart-id> [--data-mode <mode>]
+  xlsx-chart-converter export <file> --chart <id|name|all> --format <svg|png> --out <dir> [--scale <n>] [--data-mode <mode>]
 `;
 
 void main();
@@ -55,7 +55,7 @@ async function main(): Promise<void> {
 async function listCommand(args: string[]): Promise<void> {
   const file = args[0];
   if (!file) {
-    throw new CliError(2, 'Usage: excel-chart list <file> [--json]');
+    throw new CliError(2, 'Usage: xlsx-chart-converter list <file> [--json]');
   }
 
   const workbook = await openWorkbook({ path: file });
@@ -76,7 +76,7 @@ async function listCommand(args: string[]): Promise<void> {
 async function inspectCommand(args: string[]): Promise<void> {
   const [file, chartId] = args;
   if (!file || !chartId) {
-    throw new CliError(2, 'Usage: excel-chart inspect <file> <chart-id> [--data-mode <mode>]');
+    throw new CliError(2, 'Usage: xlsx-chart-converter inspect <file> <chart-id> [--data-mode <mode>]');
   }
   const dataMode = parseDataMode(readFlag(args, '--data-mode'));
 
@@ -92,7 +92,7 @@ async function inspectCommand(args: string[]): Promise<void> {
 async function exportCommand(args: string[]): Promise<void> {
   const file = args[0];
   if (!file) {
-    throw new CliError(2, 'Usage: excel-chart export <file> --chart <id|name|all> --format <svg|png> --out <dir>');
+    throw new CliError(2, 'Usage: xlsx-chart-converter export <file> --chart <id|name|all> --format <svg|png> --out <dir>');
   }
 
   const chartSelector = readFlag(args, '--chart') ?? 'all';

@@ -1,6 +1,6 @@
 import { createNumberFormatter } from './number-format.js';
 
-import type { ChartAxis, ChartSeries, ChartTextStyle } from '@natamox/excel-chart-core';
+import type { ChartAxis, ChartSeries, ChartTextStyle } from '@natamox/xlsx-chart-converter-core';
 
 export interface AxisMap {
   readonly xAxis: readonly Record<string, unknown>[];

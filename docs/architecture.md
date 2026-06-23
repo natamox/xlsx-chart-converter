@@ -1,4 +1,4 @@
-# excel-chart Architecture
+# xlsx-chart-converter Architecture
 
 This document describes the current architecture of the repository after the core discovery, parsing, rendering, CLI, and F1 fidelity work. It is no longer an M0 scaffold: the public facade and adapters are functional, while deeper layout fidelity, broader chart coverage, and production hardening remain future phases.
 
@@ -43,7 +43,7 @@ resvg     -> core + @resvg/resvg-js
 cli       -> core + echarts + svg + resvg
 ```
 
-`@natamox/excel-chart-core` exposes renderer interfaces, but it does not depend on ECharts or resvg. Parsing and model-inspection callers can use `core` without renderer adapters.
+`@natamox/xlsx-chart-converter-core` exposes renderer interfaces, but it does not depend on ECharts or resvg. Parsing and model-inspection callers can use `core` without renderer adapters.
 
 ## Runtime Flow
 
@@ -58,9 +58,9 @@ cli       -> core + echarts + svg + resvg
 ## Public API
 
 ```ts
-import { openWorkbook } from '@natamox/excel-chart-core';
-import { EChartsSvgRenderer } from '@natamox/excel-chart-echarts';
-import { ResvgPngRenderer } from '@natamox/excel-chart-resvg';
+import { openWorkbook } from '@natamox/xlsx-chart-converter-core';
+import { EChartsSvgRenderer } from '@natamox/xlsx-chart-converter-echarts';
+import { ResvgPngRenderer } from '@natamox/xlsx-chart-converter-resvg';
 
 const workbook = await openWorkbook(
   { path: 'report.xlsx' },
@@ -153,10 +153,10 @@ Data modes:
 ## CLI Contract
 
 ```bash
-excel-chart list report.xlsx --json
-excel-chart inspect report.xlsx chart-1 --data-mode chart-cache-first
-excel-chart export report.xlsx --chart all --format svg --out ./charts
-excel-chart export report.xlsx --chart all --format png --out ./charts --scale 2
+xlsx-chart-converter list report.xlsx --json
+xlsx-chart-converter inspect report.xlsx chart-1 --data-mode chart-cache-first
+xlsx-chart-converter export report.xlsx --chart all --format svg --out ./charts
+xlsx-chart-converter export report.xlsx --chart all --format png --out ./charts --scale 2
 ```
 
 Exit behavior:

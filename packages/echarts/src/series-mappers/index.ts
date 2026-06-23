@@ -8,7 +8,7 @@ import type {
   ChartPointStyle,
   ChartScatterStyle,
   ChartShapeStyle
-} from '@natamox/excel-chart-core';
+} from '@natamox/xlsx-chart-converter-core';
 
 export interface SeriesMapInput {
   readonly name: string;

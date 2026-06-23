@@ -1,6 +1,6 @@
 import { createNumberFormatter } from './number-format.js';
 
-import type { ChartDataLabels } from '@natamox/excel-chart-core';
+import type { ChartDataLabels } from '@natamox/xlsx-chart-converter-core';
 
 export function dataLabelOption(
   labels: ChartDataLabels | undefined,

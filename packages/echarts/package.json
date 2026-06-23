@@ -1,7 +1,7 @@
 {
-  "name": "@natamox/excel-chart-echarts",
+  "name": "@natamox/xlsx-chart-converter-echarts",
   "version": "0.1.0",
-  "description": "ECharts SSR SVG renderer adapter for excel-chart Chart IR.",
+  "description": "ECharts SSR SVG renderer adapter for xlsx-chart-converter Chart IR.",
   "type": "module",
   "private": false,
   "license": "MIT",
@@ -20,8 +20,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@natamox/excel-chart-core": "workspace:*",
-    "@natamox/excel-chart-svg": "workspace:*",
+    "@natamox/xlsx-chart-converter-core": "workspace:*",
+    "@natamox/xlsx-chart-converter-svg": "workspace:*",
     "echarts": "^6.0.0"
   },
   "scripts": {

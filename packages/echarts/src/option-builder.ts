@@ -1,4 +1,4 @@
-import type { ChartAxis, ChartGroup, ChartManualLayout, ChartModel, ChartSeries, ChartShapeStyle, ChartTextStyle } from '@natamox/excel-chart-core';
+import type { ChartAxis, ChartGroup, ChartManualLayout, ChartModel, ChartSeries, ChartShapeStyle, ChartTextStyle } from '@natamox/xlsx-chart-converter-core';
 import type { ECBasicOption } from 'echarts/types/dist/shared.js';
 import { axisPairForSeries, mapCartesianAxes } from './cartesian-axis-mapper.js';
 import { mapCartesianSeries, mapPieSeries } from './series-mappers/index.js';

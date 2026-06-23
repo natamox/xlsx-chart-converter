@@ -19,7 +19,7 @@ describe('ResvgPngRenderer', () => {
 
   it('reports missing custom font files without failing rendering', async () => {
     const renderer = new ResvgPngRenderer();
-    const missingFont = path.join(os.tmpdir(), 'missing-excel-chart-font.ttf');
+    const missingFont = path.join(os.tmpdir(), 'missing-xlsx-chart-converter-font.ttf');
 
     const result = await renderer.renderWithDiagnostics(
       '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="8"><text x="1" y="7">字体</text></svg>',

@@ -1,4 +1,4 @@
-# @natamox/excel-chart-core
+# @natamox/xlsx-chart-converter-core
 
 Core package for Excel OOXML chart discovery, parsing, data resolution, theme/style resolution, diagnostics, and public facade types.
 
@@ -7,7 +7,7 @@ This package intentionally does not depend on ECharts or resvg. It owns workbook
 ## Usage
 
 ```ts
-import { openWorkbook } from '@natamox/excel-chart-core';
+import { openWorkbook } from '@natamox/xlsx-chart-converter-core';
 
 const workbook = await openWorkbook({ path: 'report.xlsx' });
 try {
@@ -48,7 +48,7 @@ For production SVG/PNG output, pass renderer adapters through `openWorkbook()` o
 
 - `.xls`, `.xlsb`, encrypted workbooks, external OOXML relationships, VBA execution, and full formula calculation are not supported.
 - PNG rendering requires a `PngRenderer` option.
-- The fallback SVG is only a safety fallback; use `@natamox/excel-chart-echarts` for normal SVG rendering.
+- The fallback SVG is only a safety fallback; use `@natamox/xlsx-chart-converter-echarts` for normal SVG rendering.
 
 ## Runtime
 

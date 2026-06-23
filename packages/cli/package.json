@@ -1,12 +1,12 @@
 {
-  "name": "@natamox/excel-chart-cli",
+  "name": "@natamox/xlsx-chart-converter-cli",
   "version": "0.1.0",
   "description": "CLI for inspecting and exporting Excel OOXML charts.",
   "type": "module",
   "private": false,
   "license": "MIT",
   "bin": {
-    "excel-chart": "./dist/index.js"
+    "xlsx-chart-converter": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -17,10 +17,10 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@natamox/excel-chart-core": "workspace:*",
-    "@natamox/excel-chart-resvg": "workspace:*",
-    "@natamox/excel-chart-echarts": "workspace:*",
-    "@natamox/excel-chart-svg": "workspace:*"
+    "@natamox/xlsx-chart-converter-core": "workspace:*",
+    "@natamox/xlsx-chart-converter-resvg": "workspace:*",
+    "@natamox/xlsx-chart-converter-echarts": "workspace:*",
+    "@natamox/xlsx-chart-converter-svg": "workspace:*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

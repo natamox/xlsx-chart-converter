@@ -1,7 +1,7 @@
 import * as echarts from 'echarts';
 
-import type { ChartModel, RenderContext, SvgRenderer } from '@natamox/excel-chart-core';
-import { addSvgAccessibility, prefixSvgIds, sanitizeSvg } from '@natamox/excel-chart-svg';
+import type { ChartModel, RenderContext, SvgRenderer } from '@natamox/xlsx-chart-converter-core';
+import { addSvgAccessibility, prefixSvgIds, sanitizeSvg } from '@natamox/xlsx-chart-converter-svg';
 import { buildEChartsOption } from './option-builder.js';
 
 export interface EChartsRendererOptions {

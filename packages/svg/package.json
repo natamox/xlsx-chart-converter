@@ -1,7 +1,7 @@
 {
-  "name": "@natamox/excel-chart-svg",
+  "name": "@natamox/xlsx-chart-converter-svg",
   "version": "0.1.0",
-  "description": "SVG sanitizing, ID prefixing, and accessibility post-processing for excel-chart.",
+  "description": "SVG sanitizing, ID prefixing, and accessibility post-processing for xlsx-chart-converter.",
   "type": "module",
   "private": false,
   "license": "MIT",
@@ -20,7 +20,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@natamox/excel-chart-core": "workspace:*"
+    "@natamox/xlsx-chart-converter-core": "workspace:*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

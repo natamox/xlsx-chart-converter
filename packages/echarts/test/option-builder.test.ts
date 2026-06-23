@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildEChartsOption } from '../src/option-builder.js';
 
-import type { ChartModel } from '@natamox/excel-chart-core';
+import type { ChartModel } from '@natamox/xlsx-chart-converter-core';
 
 type OptionAxis = Record<string, unknown> & {
   axisLabel?: { formatter: (value: number | string, index?: number) => string };
