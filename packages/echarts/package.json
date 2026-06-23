@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@natamox/excel-chart-core": "workspace:*",
+    "@natamox/excel-chart-svg": "workspace:*",
     "echarts": "^6.0.0"
   },
   "scripts": {

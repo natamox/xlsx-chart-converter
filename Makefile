@@ -1,4 +1,4 @@
-.PHONY: install lint test typecheck build check clean
+.PHONY: install lint test typecheck build check clean export-chart-corpus
 
 install:
 	pnpm install
@@ -20,3 +20,6 @@ check:
 
 clean:
 	pnpm run clean
+
+export-chart-corpus: build
+	node scripts/export-chart-corpus.mjs

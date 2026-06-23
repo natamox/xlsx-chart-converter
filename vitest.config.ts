@@ -1,6 +1,14 @@
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@natamox/excel-chart-core': path.resolve(import.meta.dirname, 'packages/core/src/index.ts'),
+      '@natamox/excel-chart-echarts': path.resolve(import.meta.dirname, 'packages/echarts/src/index.ts'),
+      '@natamox/excel-chart-svg': path.resolve(import.meta.dirname, 'packages/svg/src/index.ts')
+    }
+  },
   test: {
     coverage: {
       reportsDirectory: './coverage'

@@ -1,8 +1,8 @@
 export type WorkbookSource =
   | Buffer
   | Uint8Array
-  | { path: string }
-  | { buffer: Buffer; workbook?: unknown };
+  | { path: string; workbook?: ExcelJsWorkbookLike }
+  | { buffer: Buffer; workbook?: ExcelJsWorkbookLike };
 
 export type ChartId = string;
 
@@ -32,6 +32,8 @@ export interface ChartDescriptor {
   sheetName?: string;
   chartPart?: string;
   drawingPart?: string;
+  width?: number;
+  height?: number;
   chartTypes: string[];
   supported: boolean;
   diagnostics: Diagnostic[];
@@ -40,8 +42,151 @@ export interface ChartDescriptor {
 export interface ChartModel {
   schemaVersion: 1;
   id: ChartId;
+  name?: string;
+  title?: string;
+  width: number;
+  height: number;
   chartTypes: string[];
+  legend?: ChartLegend;
+  plotArea?: ChartPlotArea;
+  style?: ChartStyle;
+  axes: ChartAxis[];
+  series: ChartSeries[];
   diagnostics: Diagnostic[];
+}
+
+export type ChartAxisKind = 'category' | 'value' | 'date' | 'series';
+export type ChartAxisPosition = 'left' | 'right' | 'top' | 'bottom';
+export type ChartGrouping = 'clustered' | 'stacked' | 'percentStacked' | 'standard';
+
+export interface ChartLegend {
+  readonly position: 'left' | 'right' | 'top' | 'bottom' | 'corner' | 'unknown';
+  readonly overlay: boolean;
+  readonly textStyle?: ChartTextStyle;
+}
+
+export interface ChartPlotArea {
+  readonly chartGroups: readonly ChartGroup[];
+}
+
+export interface ChartGroup {
+  readonly type: string;
+  readonly axisIds: readonly string[];
+  readonly grouping?: ChartGrouping;
+  readonly varyColors?: boolean;
+  readonly dataLabels?: ChartDataLabels;
+}
+
+export interface ChartStyle {
+  readonly chartArea?: ChartShapeStyle;
+  readonly plotArea?: ChartShapeStyle;
+  readonly series?: readonly ChartShapeStyle[];
+  readonly seriesMarkers?: readonly (ChartMarkerStyle | undefined)[];
+  readonly pointStyles?: readonly (readonly ChartPointStyle[] | undefined)[];
+  readonly title?: ChartTextStyle;
+  readonly legend?: ChartTextStyle;
+  readonly axes?: readonly ChartAxisStyle[];
+  readonly dataLabels?: ChartTextStyle;
+  readonly fonts?: {
+    readonly majorLatin?: string;
+    readonly minorLatin?: string;
+  };
+}
+
+export interface ChartShapeStyle {
+  readonly fill?: ChartFillStyle;
+  readonly line?: ChartLineStyle;
+}
+
+export type ChartFillKind = 'solid' | 'none' | 'gradient' | 'pattern' | 'picture';
+
+export interface ChartFillStyle {
+  readonly kind?: ChartFillKind;
+  readonly color?: string;
+  readonly transformedColor?: string;
+  readonly alpha?: number;
+}
+
+export interface ChartLineStyle {
+  readonly color?: string;
+  readonly transformedColor?: string;
+  readonly width?: number;
+  readonly alpha?: number;
+  readonly dash?: string;
+  readonly noFill?: boolean;
+}
+
+export interface ChartTextStyle {
+  readonly fontFamily?: string;
+  readonly fontSize?: number;
+  readonly bold?: boolean;
+  readonly italic?: boolean;
+  readonly color?: string;
+  readonly alpha?: number;
+}
+
+export interface ChartMarkerStyle {
+  readonly symbol?: string;
+  readonly size?: number;
+  readonly fill?: ChartFillStyle;
+  readonly line?: ChartLineStyle;
+}
+
+export interface ChartPointStyle {
+  readonly index: number;
+  readonly style?: ChartShapeStyle;
+  readonly marker?: ChartMarkerStyle;
+}
+
+export interface ChartAxisStyle {
+  readonly axisId?: string;
+  readonly shape?: ChartShapeStyle;
+  readonly text?: ChartTextStyle;
+}
+
+export interface ChartAxis {
+  readonly id: string;
+  readonly kind: ChartAxisKind;
+  readonly position?: ChartAxisPosition;
+  readonly title?: string;
+  readonly style?: ChartAxisStyle;
+  readonly crossesAxisId?: string;
+  readonly numberFormat?: string;
+  readonly scaling?: ChartAxisScaling;
+}
+
+export interface ChartAxisScaling {
+  readonly orientation?: 'minMax' | 'maxMin';
+  readonly min?: number;
+  readonly max?: number;
+  readonly majorUnit?: number;
+  readonly minorUnit?: number;
+  readonly logBase?: number;
+}
+
+export interface ChartDataLabels {
+  readonly showValue?: boolean;
+  readonly showCategoryName?: boolean;
+  readonly showSeriesName?: boolean;
+  readonly showLegendKey?: boolean;
+  readonly showPercent?: boolean;
+  readonly showBubbleSize?: boolean;
+  readonly position?: string;
+}
+
+export interface ChartDataPoint {
+  readonly category?: string;
+  readonly x?: string | number;
+  readonly y?: number;
+  readonly value?: number;
+}
+
+export interface ChartSeries {
+  readonly name: string;
+  readonly chartType?: string;
+  readonly axisIds?: readonly string[];
+  readonly dataLabels?: ChartDataLabels;
+  readonly points: readonly ChartDataPoint[];
 }
 
 export interface RenderOptions {
@@ -52,6 +197,10 @@ export interface RenderOptions {
   background?: string;
   dataMode?: DataMode;
   unsupported?: UnsupportedPolicy;
+}
+
+export interface GetChartModelOptions {
+  dataMode?: DataMode;
 }
 
 export interface RenderResult {
@@ -84,10 +233,15 @@ export interface SvgRenderer {
 
 export interface PngRenderer {
   render(svg: string, context: RenderContext): Promise<Buffer>;
+  renderWithDiagnostics?(svg: string, context: RenderContext): Promise<{
+    readonly data: Buffer;
+    readonly diagnostics: readonly Diagnostic[];
+  }>;
 }
 
 export interface ChartEngineOptions {
   packageLimits?: Record<string, unknown>;
+  defaultDataMode?: DataMode;
   renderer?: SvgRenderer;
   pngRenderer?: PngRenderer;
   logger?: {
@@ -104,7 +258,21 @@ export interface ChartEngine {
 
 export interface WorkbookHandle {
   listCharts(): Promise<ChartDescriptor[]>;
-  getChartModel(chartId: ChartId): Promise<ChartModel>;
+  getChartModel(chartId: ChartId, options?: GetChartModelOptions): Promise<ChartModel>;
   render(chartId: ChartId, options: RenderOptions): Promise<RenderResult>;
   close(): Promise<void>;
+}
+
+export interface ExcelJsWorkbookLike {
+  getWorksheet(name: string): ExcelJsWorksheetLike | undefined;
+}
+
+export interface ExcelJsWorksheetLike {
+  getCell(address: string): ExcelJsCellLike;
+  getRow(row: number): { hidden?: boolean };
+  getColumn(column: number): { hidden?: boolean };
+}
+
+export interface ExcelJsCellLike {
+  value: unknown;
 }

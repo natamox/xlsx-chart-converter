@@ -14,12 +14,13 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "pnpm --filter @natamox/excel-chart-core build && pnpm -r typecheck"
+    "typecheck": "pnpm --filter @natamox/excel-chart-core --filter @natamox/excel-chart-echarts --filter @natamox/excel-chart-svg --filter @natamox/excel-chart-resvg build && pnpm -r typecheck"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
     "@types/node": "^24.0.0",
     "eslint": "^9.30.0",
+    "jszip": "^3.10.1",
     "pixelmatch": "^7.1.0",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.35.0",

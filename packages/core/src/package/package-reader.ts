@@ -8,6 +8,7 @@ export interface PackageReader {
   listParts(): Promise<readonly PackagePart[]>;
   readPart(partName: string): Promise<Buffer>;
   hasPart(partName: string): Promise<boolean>;
+  resolvePartName(partName: string): Promise<string | undefined>;
   close(): Promise<void>;
 }
 
