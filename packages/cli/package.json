@@ -5,6 +5,9 @@
   "type": "module",
   "private": false,
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "xlsx-chart-converter": "./dist/index.js"
   },

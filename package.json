@@ -10,13 +10,17 @@
   "scripts": {
     "build": "pnpm -r --sort run build",
     "check": "pnpm run lint && pnpm run test && pnpm run typecheck && pnpm run build",
+    "changeset": "changeset",
     "clean": "pnpm -r run clean && rm -rf coverage dist",
     "lint": "eslint .",
+    "release": "pnpm run check && changeset publish",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "pnpm --filter @natamox/xlsx-chart-converter-core --filter @natamox/xlsx-chart-converter-echarts --filter @natamox/xlsx-chart-converter-svg --filter @natamox/xlsx-chart-converter-resvg build && pnpm -r typecheck"
+    "typecheck": "pnpm --filter @natamox/xlsx-chart-converter-core --filter @natamox/xlsx-chart-converter-echarts --filter @natamox/xlsx-chart-converter-svg --filter @natamox/xlsx-chart-converter-resvg build && pnpm -r typecheck",
+    "version-packages": "changeset version && pnpm install --lockfile-only"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@eslint/js": "^9.30.0",
     "@types/node": "^24.0.0",
     "eslint": "^9.30.0",
