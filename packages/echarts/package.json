@@ -1,6 +1,6 @@
 {
   "name": "@natamox/xlsx-chart-converter-echarts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "ECharts SSR SVG renderer adapter for xlsx-chart-converter Chart IR.",
   "type": "module",
   "private": false,

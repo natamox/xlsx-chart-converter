@@ -1,6 +1,6 @@
 {
   "name": "@natamox/xlsx-chart-converter-svg",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SVG sanitizing, ID prefixing, and accessibility post-processing for xlsx-chart-converter.",
   "type": "module",
   "private": false,
