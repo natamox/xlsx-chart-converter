@@ -6,8 +6,8 @@ import { UnsupportedOperationError, createChartEngine, openWorkbook } from '../s
 
 import type { ExcelJsWorkbookLike, SvgRenderer } from '../src/index.js';
 
-const fixturePath = path.resolve(import.meta.dirname, '../../../tmp/poi-WithThreeCharts.xlsx');
-const chartSheetFixturePath = path.resolve(import.meta.dirname, '../../../tmp/exceljs-chart-sheet.xlsx');
+const fixturePath = path.resolve(import.meta.dirname, '../../../fixtures/workbooks/apache-poi/WithThreeCharts.xlsx');
+const chartSheetFixturePath = path.resolve(import.meta.dirname, '../../../fixtures/workbooks/apache-poi/WithChartSheet.xlsx');
 
 describe('workbook facade', () => {
   it('lists charts from a real OOXML workbook', async () => {
@@ -44,12 +44,12 @@ describe('workbook facade', () => {
 
     expect(charts).toMatchObject([{
       id: 'chart-chart1',
-      name: 'Chart 1',
-      sheetName: 'Chart1',
+      name: 'Shape',
+      sheetName: 'Chart2',
       chartPart: 'xl/charts/chart1.xml',
       drawingPart: 'xl/drawings/drawing1.xml',
-      width: 977,
-      height: 638,
+      width: 901,
+      height: 613,
       chartTypes: ['column'],
       supported: true
     }]);
