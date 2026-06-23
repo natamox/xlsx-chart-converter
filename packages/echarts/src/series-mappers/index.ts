@@ -18,6 +18,8 @@ export interface SeriesMapInput {
   readonly valueNumberFormat?: string;
   readonly xAxisIndex?: number;
   readonly yAxisIndex?: number;
+  readonly center?: readonly [string, string];
+  readonly radius?: string | readonly [string, string];
   readonly percentStackedTotals?: readonly number[];
   readonly style?: ChartShapeStyle;
   readonly marker?: ChartMarkerStyle;
@@ -49,7 +51,8 @@ export function mapPieSeries(input: SeriesMapInput & { readonly doughnut: boolea
   return {
     name: input.name,
     type: 'pie',
-    radius: input.doughnut ? ['42%', '70%'] : '70%',
+    radius: input.radius ?? (input.doughnut ? ['42%', '70%'] : '70%'),
+    ...(input.center ? { center: input.center } : {}),
     animation: false,
     ...itemStyle(input.style),
     ...markerStyle(input.marker),

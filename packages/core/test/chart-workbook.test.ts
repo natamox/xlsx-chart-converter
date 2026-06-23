@@ -119,6 +119,40 @@ describe('workbook facade', () => {
     await workbook.close();
   });
 
+  it('preserves manual legend and plot area layout in Chart IR', async () => {
+    const workbook = await openWorkbook(await createManualLayoutWorkbook());
+
+    const [chart] = await workbook.listCharts();
+    if (!chart) {
+      throw new Error('Expected a chart in manual layout fixture.');
+    }
+    const model = await workbook.getChartModel(chart.id);
+
+    await workbook.close();
+    expect(model.legend?.layout).toEqual({
+      target: 'inner',
+      xMode: 'factor',
+      yMode: 'factor',
+      widthMode: 'factor',
+      heightMode: 'factor',
+      x: 0.71,
+      y: 0.25,
+      width: 0.24,
+      height: 0.5
+    });
+    expect(model.plotArea?.layout).toEqual({
+      target: 'inner',
+      xMode: 'factor',
+      yMode: 'factor',
+      widthMode: 'factor',
+      heightMode: 'factor',
+      x: 0.08,
+      y: 0.12,
+      width: 0.58,
+      height: 0.76
+    });
+  });
+
   it('returns diagnostics for damaged drawing and chart relationships', async () => {
     const workbook = await openWorkbook(await createDamagedRelationshipWorkbook());
 
@@ -361,6 +395,113 @@ async function createDamagedRelationshipWorkbook(): Promise<Buffer> {
 </Relationships>`);
 
   return zip.generateAsync({ type: 'nodebuffer' });
+}
+
+async function createManualLayoutWorkbook(): Promise<Buffer> {
+  const zip = new JSZip();
+  addMinimalWorkbookPackage(zip, manualLayoutChartXml());
+  return zip.generateAsync({ type: 'nodebuffer' });
+}
+
+function addMinimalWorkbookPackage(zip: JSZip, chartXml: string): void {
+  zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>
+  <Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>
+</Types>`);
+  zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`);
+  zip.file('xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`);
+  zip.file('xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+</Relationships>`);
+  zip.file('xl/worksheets/sheet1.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <drawing r:id="rIdDrawing"/>
+</worksheet>`);
+  zip.file('xl/worksheets/_rels/sheet1.xml.rels', `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rIdDrawing" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>
+</Relationships>`);
+  zip.file('xl/drawings/drawing1.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <xdr:twoCellAnchor>
+    <xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+    <xdr:to><xdr:col>8</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>20</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+    <xdr:graphicFrame>
+      <xdr:nvGraphicFramePr><xdr:cNvPr id="1" name="Manual Layout Chart"/></xdr:nvGraphicFramePr>
+      <a:graphic><a:graphicData><c:chart r:id="rIdChart"/></a:graphicData></a:graphic>
+    </xdr:graphicFrame>
+  </xdr:twoCellAnchor>
+</xdr:wsDr>`);
+  zip.file('xl/drawings/_rels/drawing1.xml.rels', `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rIdChart" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/>
+</Relationships>`);
+  zip.file('xl/charts/chart1.xml', chartXml);
+}
+
+function manualLayoutChartXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
+  <c:chart>
+    <c:plotArea>
+      <c:layout>
+        <c:manualLayout>
+          <c:layoutTarget val="inner"/>
+          <c:xMode val="factor"/>
+          <c:yMode val="factor"/>
+          <c:wMode val="factor"/>
+          <c:hMode val="factor"/>
+          <c:x val="0.08"/>
+          <c:y val="0.12"/>
+          <c:w val="0.58"/>
+          <c:h val="0.76"/>
+        </c:manualLayout>
+      </c:layout>
+      <c:barChart>
+        <c:barDir val="col"/>
+        <c:grouping val="clustered"/>
+        <c:ser>
+          <c:tx><c:strRef><c:strCache><c:pt idx="0"><c:v>Revenue</c:v></c:pt></c:strCache></c:strRef></c:tx>
+          <c:cat><c:strRef><c:strCache><c:pt idx="0"><c:v>Q1</c:v></c:pt></c:strCache></c:strRef></c:cat>
+          <c:val><c:numRef><c:numCache><c:pt idx="0"><c:v>12</c:v></c:pt></c:numCache></c:numRef></c:val>
+        </c:ser>
+        <c:axId val="0"/>
+        <c:axId val="1"/>
+      </c:barChart>
+      <c:catAx><c:axId val="0"/><c:axPos val="b"/><c:crossAx val="1"/></c:catAx>
+      <c:valAx><c:axId val="1"/><c:axPos val="l"/><c:crossAx val="0"/></c:valAx>
+    </c:plotArea>
+    <c:legend>
+      <c:legendPos val="r"/>
+      <c:layout>
+        <c:manualLayout>
+          <c:layoutTarget val="inner"/>
+          <c:xMode val="factor"/>
+          <c:yMode val="factor"/>
+          <c:wMode val="factor"/>
+          <c:hMode val="factor"/>
+          <c:x val="0.71"/>
+          <c:y val="0.25"/>
+          <c:w val="0.24"/>
+          <c:h val="0.5"/>
+        </c:manualLayout>
+      </c:layout>
+      <c:overlay val="0"/>
+    </c:legend>
+  </c:chart>
+</c:chartSpace>`;
 }
 
 function createWorkbookLike(sheets: Record<string, MockSheet>): ExcelJsWorkbookLike {

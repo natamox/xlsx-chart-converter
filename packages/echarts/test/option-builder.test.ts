@@ -49,6 +49,30 @@ describe('buildEChartsOption', () => {
     expect(option.series).toMatchObject([{ type: 'scatter', data: [[1, 3], [2, 8]] }]);
   });
 
+  it('reserves plot area space for non-overlay right legends', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      legend: { position: 'right', overlay: false },
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        { id: 'val', kind: 'value', position: 'left' }
+      ],
+      plotArea: {
+        chartGroups: [{ type: 'column', axisIds: ['cat', 'val'] }]
+      },
+      series: [
+        { name: 'Camping Equipment', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'A', value: 10 }] },
+        { name: 'Golf Equipment', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'A', value: 4 }] },
+        { name: 'Mountaineering Equipment', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'A', value: 2 }] },
+        { name: 'Outdoor Protection', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'A', value: 1 }] },
+        { name: 'Personal Accessories', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'A', value: 12 }] }
+      ]
+    }).option;
+
+    expect(option.legend).toMatchObject({ right: 12, top: 'middle', orient: 'vertical' });
+    expect(option.grid).toMatchObject({ right: 217 });
+  });
+
   it('maps scatter axis ids by series order when axis positions are absent', () => {
     const option = buildEChartsOption({
       ...baseModel,
@@ -162,6 +186,246 @@ describe('buildEChartsOption', () => {
       data: [{ name: 'A', value: 4 }, { name: 'B', value: 6 }]
     }]);
     expect(firstOptionSeries(option.series).label?.formatter).toEqual(expect.any(Function));
+  });
+
+  it('reserves pie area space for non-overlay right legends', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      chartTypes: ['pie'],
+      legend: { position: 'right', overlay: false },
+      plotArea: {
+        chartGroups: [{ type: 'pie', axisIds: [] }]
+      },
+      series: [{
+        name: 'Revenue',
+        chartType: 'pie',
+        points: [
+          { category: 'Camping Equipment', value: 40 },
+          { category: 'Golf Equipment', value: 20 },
+          { category: 'Mountaineering Equipment', value: 10 },
+          { category: 'Outdoor Protection', value: 2 },
+          { category: 'Personal Accessories', value: 48 }
+        ]
+      }]
+    }).option;
+
+    expect(firstOptionSeries(option.series)).toMatchObject({
+      center: ['43%', '53%'],
+      radius: '40%'
+    });
+  });
+
+  it('uses manual layout boxes when present', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      width: 500,
+      height: 300,
+      legend: {
+        position: 'right',
+        overlay: false,
+        layout: { xMode: 'factor', yMode: 'factor', widthMode: 'factor', heightMode: 'factor', x: 0.72, y: 0.2, width: 0.22, height: 0.5 }
+      },
+      plotArea: {
+        layout: { xMode: 'factor', yMode: 'factor', widthMode: 'factor', heightMode: 'factor', x: 0.1, y: 0.18, width: 0.55, height: 0.7 },
+        chartGroups: [{ type: 'column', axisIds: ['cat', 'val'] }]
+      },
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        { id: 'val', kind: 'value', position: 'left' }
+      ],
+      series: [
+        { name: 'A', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'Q1', value: 1 }] }
+      ]
+    }).option;
+
+    expect(option.grid).toMatchObject({
+      left: 50,
+      right: 175,
+      top: 54,
+      bottom: 36
+    });
+    expect(option.legend).toMatchObject({
+      left: 360,
+      top: 60,
+      width: 110,
+      height: 150
+    });
+  });
+
+  it('positions overlay manual legends without reserving plot area space', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      width: 500,
+      height: 300,
+      legend: {
+        position: 'right',
+        overlay: true,
+        layout: { x: 0.72, y: 0.2, width: 0.22, height: 0.5 }
+      },
+      plotArea: {
+        chartGroups: [{ type: 'column', axisIds: ['cat', 'val'] }]
+      },
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        { id: 'val', kind: 'value', position: 'left' }
+      ],
+      series: [
+        { name: 'A', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'Q1', value: 1 }] }
+      ]
+    }).option;
+
+    expect(option.legend).toMatchObject({
+      left: 360,
+      top: 60,
+      width: 110,
+      height: 150
+    });
+    expect(option.grid).toMatchObject({
+      left: 48,
+      right: 24
+    });
+  });
+
+  it('uses chart text, axis text, and labels for inner manual layout reference boxes', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      width: 600,
+      height: 400,
+      title: 'Quarterly Revenue',
+      style: {
+        title: { fontSize: 20 },
+        dataLabels: { fontSize: 12 }
+      },
+      axes: [
+        {
+          id: 'cat',
+          kind: 'category',
+          position: 'bottom',
+          title: 'Fiscal Quarter',
+          style: { text: { fontSize: 14 } }
+        },
+        {
+          id: 'val',
+          kind: 'value',
+          position: 'left',
+          title: 'Revenue USD',
+          style: { text: { fontSize: 13 } }
+        }
+      ],
+      plotArea: {
+        layout: {
+          target: 'inner',
+          x: 0,
+          y: 0,
+          width: 1,
+          height: 1
+        },
+        chartGroups: [{
+          type: 'column',
+          axisIds: ['cat', 'val'],
+          dataLabels: { showValue: true, position: 'outEnd' }
+        }]
+      },
+      series: [
+        { name: 'Revenue', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'Q1', value: 10 }] }
+      ]
+    }).option;
+
+    expect(option.grid).toMatchObject({
+      left: 69,
+      right: 16,
+      top: 66,
+      bottom: 77
+    });
+  });
+
+  it('uses inner manual legend layout without recursive legend reservation', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      width: 600,
+      height: 400,
+      title: 'Quarterly Revenue',
+      style: { title: { fontSize: 20 } },
+      legend: {
+        position: 'right',
+        overlay: false,
+        layout: { target: 'inner', x: 0.7, y: 0.1, width: 0.2, height: 0.5 }
+      },
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom', title: 'Quarter' },
+        { id: 'val', kind: 'value', position: 'left', title: 'Revenue' }
+      ],
+      plotArea: {
+        chartGroups: [{ type: 'column', axisIds: ['cat', 'val'] }]
+      },
+      series: [
+        { name: 'Revenue', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'Q1', value: 10 }] }
+      ]
+    }).option;
+
+    expect(option.legend).toMatchObject({
+      left: 427,
+      top: 73,
+      width: 105,
+      height: 146
+    });
+    expect(optionObject(option.grid).right).toBeCloseTo(188.9);
+  });
+
+  it('stacks same-side title, label, and legend reservations', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      width: 640,
+      height: 360,
+      title: 'Chart',
+      legend: { position: 'top', overlay: false, textStyle: { fontSize: 12 } },
+      style: {
+        title: { fontSize: 16 },
+        dataLabels: { fontSize: 10 }
+      },
+      plotArea: {
+        layout: { target: 'inner', x: 0, y: 0, width: 1, height: 1 },
+        chartGroups: [{
+          type: 'column',
+          axisIds: ['cat', 'val'],
+          dataLabels: { showValue: true, position: 'outEnd' }
+        }]
+      },
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        { id: 'val', kind: 'value', position: 'left' }
+      ],
+      series: [
+        { name: 'Alpha', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'Q1', value: 1 }] },
+        { name: 'Beta', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'Q1', value: 2 }] }
+      ]
+    }).option;
+
+    expect(optionObject(option.grid).top).toBeCloseTo(125.2);
+  });
+
+  it('maps corner legends to a top-right reservation', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      legend: { position: 'corner', overlay: false },
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        { id: 'val', kind: 'value', position: 'left' }
+      ],
+      plotArea: {
+        chartGroups: [{ type: 'column', axisIds: ['cat', 'val'] }]
+      },
+      series: [
+        { name: 'Series A', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'Q1', value: 1 }] }
+      ]
+    }).option;
+
+    expect(option.legend).toMatchObject({
+      right: 12,
+      top: 32,
+      orient: 'vertical'
+    });
+    expect(optionObject(option.grid).right).toBeCloseTo(120.04);
   });
 
   it('formats pie percentage labels from ECharts percent payload', () => {
@@ -344,6 +608,13 @@ function optionSeriesAt(value: unknown, index: number): OptionSeries {
 
 function firstOptionObject(value: unknown): OptionAxis & OptionSeries {
   return optionObjectAt(value, 0);
+}
+
+function optionObject(value: unknown): Record<string, number> {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Expected option object.');
+  }
+  return value as Record<string, number>;
 }
 
 function optionObjectAt(value: unknown, index: number): OptionAxis & OptionSeries {

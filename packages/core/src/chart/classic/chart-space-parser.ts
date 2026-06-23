@@ -9,6 +9,9 @@ import type {
   ChartGroup,
   ChartGrouping,
   ChartLegend,
+  ChartLayoutMode,
+  ChartLayoutTarget,
+  ChartManualLayout,
   ChartModel,
   ChartSeries,
   Diagnostic
@@ -117,6 +120,7 @@ export async function parseClassicChartPart(
   const styledLegend = legend && styleResult.style.legend
     ? { ...legend, textStyle: styleResult.style.legend }
     : legend;
+  const plotAreaLayout = parsePlotAreaLayout(plotArea);
   return {
     schemaVersion: 1,
     id: options.descriptor.id,
@@ -126,7 +130,7 @@ export async function parseClassicChartPart(
     height: options.descriptor.height ?? 360,
     chartTypes: [...new Set(chartGroups.map((group) => normalizeChartType(group.type, group.node)))],
     ...(styledLegend ? { legend: styledLegend } : {}),
-    plotArea: { chartGroups: groups },
+    plotArea: { chartGroups: groups, ...(plotAreaLayout ? { layout: plotAreaLayout } : {}) },
     style: styleResult.style,
     axes,
     series,
@@ -398,9 +402,11 @@ function parseLegend(chart: XmlNode): ChartLegend | undefined {
     return undefined;
   }
 
+  const layout = parseManualLayout(legend);
   return {
     position: normalizeLegendPosition(valAttr(child(legend, 'legendPos'))),
-    overlay: parseBooleanVal(child(legend, 'overlay')) ?? false
+    overlay: parseBooleanVal(child(legend, 'overlay')) ?? false,
+    ...(layout ? { layout } : {})
   };
 }
 
@@ -428,6 +434,66 @@ function parseChartGroup(type: string, node: XmlNode): ChartGroup {
     group.dataLabels = dataLabels;
   }
   return group;
+}
+
+function parsePlotAreaLayout(plotArea: XmlNode): ChartManualLayout | undefined {
+  return parseManualLayout(plotArea);
+}
+
+function parseManualLayout(node: XmlNode): ChartManualLayout | undefined {
+  const manualLayout = child(child(node, 'layout') ?? node, 'manualLayout');
+  if (!manualLayout) {
+    return undefined;
+  }
+
+  const layout: {
+    target?: ChartLayoutTarget;
+    xMode?: ChartLayoutMode;
+    yMode?: ChartLayoutMode;
+    widthMode?: ChartLayoutMode;
+    heightMode?: ChartLayoutMode;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+  } = {};
+  const target = normalizeLayoutTarget(valAttr(child(manualLayout, 'layoutTarget')));
+  const xMode = normalizeLayoutMode(valAttr(child(manualLayout, 'xMode')));
+  const yMode = normalizeLayoutMode(valAttr(child(manualLayout, 'yMode')));
+  const widthMode = normalizeLayoutMode(valAttr(child(manualLayout, 'wMode')));
+  const heightMode = normalizeLayoutMode(valAttr(child(manualLayout, 'hMode')));
+  const x = parseValNumber(child(manualLayout, 'x'));
+  const y = parseValNumber(child(manualLayout, 'y'));
+  const width = parseValNumber(child(manualLayout, 'w'));
+  const height = parseValNumber(child(manualLayout, 'h'));
+  if (target) {
+    layout.target = target;
+  }
+  if (xMode) {
+    layout.xMode = xMode;
+  }
+  if (yMode) {
+    layout.yMode = yMode;
+  }
+  if (widthMode) {
+    layout.widthMode = widthMode;
+  }
+  if (heightMode) {
+    layout.heightMode = heightMode;
+  }
+  if (x !== undefined) {
+    layout.x = x;
+  }
+  if (y !== undefined) {
+    layout.y = y;
+  }
+  if (width !== undefined) {
+    layout.width = width;
+  }
+  if (height !== undefined) {
+    layout.height = height;
+  }
+  return Object.keys(layout).length > 0 ? layout : undefined;
 }
 
 function parseAxisIds(node: XmlNode): string[] {
@@ -615,6 +681,20 @@ function normalizeLegendPosition(value: string | undefined): ChartLegend['positi
     return 'corner';
   }
   return 'unknown';
+}
+
+function normalizeLayoutTarget(value: string | undefined): ChartLayoutTarget | undefined {
+  if (value === 'inner' || value === 'outer') {
+    return value;
+  }
+  return undefined;
+}
+
+function normalizeLayoutMode(value: string | undefined): ChartLayoutMode | undefined {
+  if (value === 'edge' || value === 'factor') {
+    return value;
+  }
+  return undefined;
 }
 
 function parseBooleanVal(node: XmlNode | undefined): boolean | undefined {

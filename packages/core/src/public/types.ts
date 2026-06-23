@@ -62,11 +62,28 @@ export type ChartGrouping = 'clustered' | 'stacked' | 'percentStacked' | 'standa
 export interface ChartLegend {
   readonly position: 'left' | 'right' | 'top' | 'bottom' | 'corner' | 'unknown';
   readonly overlay: boolean;
+  readonly layout?: ChartManualLayout;
   readonly textStyle?: ChartTextStyle;
 }
 
 export interface ChartPlotArea {
   readonly chartGroups: readonly ChartGroup[];
+  readonly layout?: ChartManualLayout;
+}
+
+export type ChartLayoutTarget = 'inner' | 'outer';
+export type ChartLayoutMode = 'edge' | 'factor';
+
+export interface ChartManualLayout {
+  readonly target?: ChartLayoutTarget;
+  readonly xMode?: ChartLayoutMode;
+  readonly yMode?: ChartLayoutMode;
+  readonly widthMode?: ChartLayoutMode;
+  readonly heightMode?: ChartLayoutMode;
+  readonly x?: number;
+  readonly y?: number;
+  readonly width?: number;
+  readonly height?: number;
 }
 
 export interface ChartGroup {
