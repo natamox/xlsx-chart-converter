@@ -9,12 +9,22 @@ This package owns SVG sanitizing, ID prefixing, and accessibility metadata helpe
 ```ts
 import { addSvgAccessibility, prefixSvgIds, sanitizeSvg } from '@natamox/excel-chart-svg';
 
-const safeSvg = addSvgAccessibility(prefixSvgIds(sanitizeSvg(svg), 'chart-'), 'Chart');
+const safeSvg = addSvgAccessibility(
+  prefixSvgIds(sanitizeSvg(svg), 'chart-'),
+  'Revenue by quarter'
+);
 ```
 
-## Status
+## Helpers
 
-The package is currently an M0 scaffold. Public helper names are present; sanitizer, ID rewriting, and accessibility behavior are still being implemented.
+- `sanitizeSvg(svg)`: removes doctype, scripts, foreign objects, event attributes, unsafe external hrefs, and unsafe external URL references.
+- `prefixSvgIds(svg, prefix)`: prefixes `id` attributes and matching local `url(#id)` / `#id` references.
+- `addSvgAccessibility(svg, title)`: adds `role="img"`, `aria-label`, and a normalized `<title>`.
+
+## Limits
+
+- The sanitizer is a deterministic string-based post-processor for renderer output, not a general-purpose untrusted HTML/XML sanitizer.
+- Remote, file, and JavaScript references are stripped; local fragment references are preserved and can be prefixed.
 
 ## Runtime
 

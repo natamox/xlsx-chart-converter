@@ -7,14 +7,44 @@ This package depends on `@natamox/excel-chart-core` for PNG renderer interfaces 
 ## Usage
 
 ```ts
+import { openWorkbook } from '@natamox/excel-chart-core';
+import { EChartsSvgRenderer } from '@natamox/excel-chart-echarts';
 import { ResvgPngRenderer } from '@natamox/excel-chart-resvg';
 
-const renderer = new ResvgPngRenderer();
+const workbook = await openWorkbook(
+  { path: 'report.xlsx' },
+  {
+    renderer: new EChartsSvgRenderer(),
+    pngRenderer: new ResvgPngRenderer({ defaultBackground: '#fff' })
+  }
+);
+
+const [chart] = await workbook.listCharts();
+const png = await workbook.render(chart.id, {
+  format: 'png',
+  scale: 2
+});
+
+await workbook.close();
 ```
 
-## Status
+## Renderer Options
 
-The package is currently an M0 scaffold. The adapter class and package boundary exist; actual PNG rasterization options, font loading, and background handling are still being implemented.
+```ts
+new ResvgPngRenderer({
+  defaultBackground: '#fff'
+});
+```
+
+Render context controls scale, background override, font families, and custom font files. Missing custom font files are returned as `FONT_FILE_NOT_FOUND` warnings from `renderWithDiagnostics()`.
+
+## Implemented Capabilities
+
+- PNG rasterization through `@resvg/resvg-js`.
+- Scale-based output sizing.
+- Optional background color.
+- System font loading.
+- Optional custom font file loading with diagnostics.
 
 ## Runtime
 

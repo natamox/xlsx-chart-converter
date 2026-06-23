@@ -1,8 +1,8 @@
 # excel-chart
 
-Node.js library for parsing Excel OOXML charts and rendering them to SVG or PNG. The project is organized as a pnpm workspace: `core` owns OOXML chart discovery, parsing, IR, diagnostics, and the public facade; ECharts, SVG post-processing, resvg PNG output, and the CLI evolve as separate packages so parsing-only users do not install rendering adapters by default.
+Node.js workspace for discovering, parsing, inspecting, and rendering Excel OOXML charts from `.xlsx` and `.xlsm` workbooks.
 
-This repository is currently in the M0 scaffolding phase. TypeScript, linting, tests, builds, CI, package boundaries, and public API skeletons are in place. Chart discovery, parsing, and rendering will land in later milestones.
+The project is now past the initial scaffold. The core package can discover charts through workbook, sheet, drawing, and relationship parts; parse supported classic chart families into a deterministic Chart IR; resolve chart data and workbook/theme/style context; and render to SVG or PNG through adapter packages.
 
 ## Requirements
 
@@ -16,76 +16,113 @@ pnpm install
 pnpm run check
 ```
 
-Common commands:
+Export charts from the Apache POI fixture corpus for visual inspection:
+
+```bash
+make export-chart-corpus
+```
+
+The corpus preview is written to `output/chart-corpus-preview/index.html`. The `output/` directory is intentionally ignored by git.
+
+## Common Commands
 
 ```bash
 pnpm run lint
 pnpm run test
 pnpm run typecheck
 pnpm run build
+pnpm run check
 make check
+make export-chart-corpus
 ```
 
 ## Workspace Layout
 
 ```text
 packages/
-  core/              # Facade, PackageReader, workbook/drawing/chart/data/theme/xml/IR/diagnostics/runtime
-  echarts/           # ECharts SSR SVG adapter
-  svg/               # SVG sanitizing, ID prefixing, accessibility
-  resvg/             # resvg PNG adapter
-  cli/               # excel-chart CLI
-fixtures/            # workbook and IR/SVG/PNG fixtures
+  core/      # OOXML package/workbook/drawing/chart parsing, Chart IR, diagnostics, facade
+  echarts/   # ECharts server-side SVG renderer for Chart IR
+  svg/       # SVG sanitizing, ID prefixing, accessibility post-processing
+  resvg/     # resvg PNG rasterization adapter
+  cli/       # excel-chart command-line interface
+fixtures/    # Apache POI workbook corpus and regression fixtures
+scripts/     # local QA/export helpers
+output/      # generated previews, ignored by git
 ```
 
 Dependency direction:
 
 ```text
-core <- exceljs adapter
-core -> no ECharts/resvg dependency
-echarts -> core IR types
-svg -> core render types
-resvg -> core render types
-cli -> core + echarts + svg + resvg
+core      -> no renderer packages
+echarts   -> core + svg + echarts
+svg       -> core render types only where needed
+resvg     -> core + @resvg/resvg-js
+cli       -> core + echarts + svg + resvg
 ```
 
-## Architecture
-
-See [docs/architecture.md](docs/architecture.md) for the repository-level architecture, package boundaries, runtime flow, milestones, and testing strategy.
-
-## Public API Draft
+## Library Usage
 
 ```ts
 import { openWorkbook } from '@natamox/excel-chart-core';
+import { EChartsSvgRenderer } from '@natamox/excel-chart-echarts';
+import { ResvgPngRenderer } from '@natamox/excel-chart-resvg';
 
-const workbook = await openWorkbook(buffer);
+const workbook = await openWorkbook(
+  { path: 'report.xlsx' },
+  {
+    renderer: new EChartsSvgRenderer(),
+    pngRenderer: new ResvgPngRenderer()
+  }
+);
+
 const charts = await workbook.listCharts();
+const model = await workbook.getChartModel(charts[0].id);
+const svg = await workbook.render(model.id, { format: 'svg' });
+const png = await workbook.render(model.id, { format: 'png', scale: 2 });
+
 await workbook.close();
 ```
 
-Planned rendering API:
+Supported data modes:
 
-```ts
-await workbook.render('chart-1', {
-  format: 'png',
-  scale: 2,
-  dataMode: 'chart-cache-first'
-});
-```
+- `chart-cache-first`
+- `cache-only`
+- `exceljs-first`
+- `exceljs-only`
 
-## CLI Draft
+When rendering without an SVG renderer, `core` returns a simple fallback SVG. Production-quality SVG output should pass `EChartsSvgRenderer`; PNG output additionally requires `ResvgPngRenderer`.
+
+## CLI
 
 ```bash
 excel-chart list report.xlsx --json
-excel-chart inspect report.xlsx chart-1 --ir --diagnostics
-excel-chart export report.xlsm --chart all --format png --out ./charts --scale 2
+excel-chart inspect report.xlsx chart-1 --data-mode chart-cache-first
+excel-chart export report.xlsx --chart all --format svg --out ./charts
+excel-chart export report.xlsx --chart all --format png --out ./charts --scale 2
 ```
 
-The current CLI only prints help and explicit not-implemented messages. Full inspection and export support will arrive in later milestones.
+The CLI is implemented for list, inspect, and export workflows. It uses the same core facade and renderer adapters as library callers.
 
-## Initial Boundaries
+## Current Coverage
 
-- ExcelJS is used only as the workbook and cell data adapter; private ExcelJS APIs are not used.
-- The original `.xlsx` or `.xlsm` buffer is the source of truth for OOXML chart parts.
-- `core` is decoupled from renderers; ECharts and resvg are replaceable adapters.
-- `.xls`, `.xlsb`, encrypted workbooks, VBA execution, and full formula calculation are not supported.
+Implemented:
+
+- Safe ZIP/package access through the original OOXML package.
+- Workbook, worksheet, chartsheet, drawing, anchor, and chart relationship discovery.
+- Classic chart parsing for common 2D chart structures used by the current fixture corpus.
+- A1 reference parsing and data resolution from chart caches, worksheet XML, and optional ExcelJS-like workbook providers.
+- Theme color/style resolution, including F1 style cascade fields for fills, lines, text, markers, per-point styles, axes, legend, and data labels.
+- ECharts SVG option mapping for supported chart IR.
+- SVG sanitizing, ID prefixing, and accessibility metadata.
+- PNG rasterization through resvg with scale, background, and font-file diagnostics.
+- Apache POI corpus export script for visual QA.
+
+Known limits:
+
+- Legacy `.xls`, `.xlsb`, encrypted workbooks, VBA execution, external relationships, and full formula calculation are not supported.
+- Unsupported OOXML chart/style features are surfaced as diagnostics and may degrade visually.
+- Full pixel-perfect Excel/WPS parity is still a later fidelity phase; F1 covers style cascade and IR exposure, not final layout parity.
+
+## Architecture
+
+See [docs/architecture.md](docs/architecture.md) for package boundaries, runtime flow, milestone status, and the next fidelity/production hardening work.
