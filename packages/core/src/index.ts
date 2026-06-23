@@ -31,6 +31,7 @@ export type {
   ChartPlotArea,
   ChartPointStyle,
   ChartShapeStyle,
+  ChartScatterStyle,
   ChartStyle,
   ChartTextStyle,
   ChartSeries,

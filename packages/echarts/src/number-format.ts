@@ -4,6 +4,9 @@ export function createNumberFormatter(format: string | undefined): ((value: unkn
   }
 
   const normalized = format.toLowerCase();
+  if (normalized === 'general') {
+    return undefined;
+  }
   if (normalized.includes('%')) {
     const decimals = decimalPlaces(format);
     return (value) => {

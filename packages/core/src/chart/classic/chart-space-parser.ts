@@ -6,14 +6,18 @@ import type {
   ChartAxisScaling,
   ChartDataLabels,
   ChartDescriptor,
+  ChartFillStyle,
   ChartGroup,
   ChartGrouping,
   ChartLegend,
   ChartLayoutMode,
   ChartLayoutTarget,
+  ChartLineStyle,
   ChartManualLayout,
   ChartModel,
+  ChartScatterStyle,
   ChartSeries,
+  ChartShapeStyle,
   Diagnostic
 } from '../../public/types.js';
 import { attr, child, children, descendants, firstDescendant, parseXmlTree, textContent, valAttr } from '../../xml/xml-tree.js';
@@ -48,6 +52,7 @@ const chartElementTypes = [
 ] as const;
 const chartStyleRelType = 'http://schemas.microsoft.com/office/2011/relationships/chartStyle';
 const chartColorStyleRelType = 'http://schemas.microsoft.com/office/2011/relationships/chartColorStyle';
+const emptyNode: XmlNode = { name: '', localName: '', attributes: new Map(), children: [], text: '' };
 
 interface SeriesParseContext {
   readonly mode: 'chart-cache-first' | 'exceljs-first' | 'cache-only' | 'exceljs-only';
@@ -67,8 +72,15 @@ interface ResolvedNumberValues {
 }
 
 interface ResolvedCategoryValues {
-  readonly values: readonly { label?: string; value?: number }[];
+  readonly values: readonly CategoryValue[];
   readonly diagnostics: readonly Diagnostic[];
+}
+
+interface CategoryValue {
+  readonly index?: number;
+  readonly label?: string;
+  readonly value?: number;
+  readonly levels?: readonly string[];
 }
 
 export async function parseClassicChartPart(
@@ -190,6 +202,7 @@ async function parseSeries(
   const name = nameResult.value === undefined ? `Series ${index + 1}` : String(nameResult.value);
   const normalizedChartType = normalizeChartType(chartType, node);
   const dataLabels = parseDataLabels(node) ?? groupDataLabels;
+  const explosion = parseValNumber(child(node, 'explosion'));
   if (chartType === 'scatterChart') {
     const xs = await parseReferenceValues(child(node, 'xVal') ?? node, 'numCache', context);
     const ys = await parseReferenceNumberValues(child(node, 'yVal') ?? node, 'numCache', context);
@@ -207,7 +220,10 @@ async function parseSeries(
     }, diagnostics };
   }
 
-  const categories = await parseCategoryValues(child(node, 'cat') ?? node, context);
+  const categoryNode = child(node, 'cat');
+  const categories = categoryNode
+    ? await parseCategoryValues(categoryNode, context)
+    : { values: [], diagnostics: [] };
   const values = await parseReferenceNumberValues(child(node, 'val') ?? node, 'numCache', context);
   diagnostics.push(...categories.diagnostics, ...values.diagnostics);
 
@@ -216,11 +232,16 @@ async function parseSeries(
     chartType: normalizedChartType,
     axisIds,
     ...(dataLabels ? { dataLabels } : {}),
-    points: values.values.map((value, pointIndex) => ({
-      category: categories.values[pointIndex]?.label ?? String(pointIndex + 1),
-      value,
-      y: value
-    }))
+    points: values.values.map((value, pointIndex) => {
+      const category = categories.values[pointIndex];
+      return {
+        category: category?.label ?? String(pointIndex + 1),
+        ...(category?.levels ? { categoryLevels: category.levels } : {}),
+        value,
+        y: value,
+        ...(explosion === undefined ? {} : { explosion })
+      };
+    })
   }, diagnostics };
 }
 
@@ -231,6 +252,10 @@ async function parseSeriesName(
   const tx = child(node, 'tx');
   if (!tx) {
     return { diagnostics: [] };
+  }
+  const direct = textContent(child(tx, 'v'));
+  if (direct !== undefined) {
+    return { value: direct, diagnostics: [] };
   }
   const formula = textContent(firstDescendant(tx, 'f'));
   const cacheValues = parseValues(firstDescendant(tx, 'strCache'))
@@ -253,6 +278,11 @@ function parseTitle(chart: XmlNode): string | undefined {
     ?? textContent(firstDescendant(title, 'numCache'));
   if (cached) {
     return cached;
+  }
+
+  const direct = textContent(child(child(title, 'tx') ?? title, 'v'));
+  if (direct) {
+    return direct;
   }
 
   const rich = firstDescendant(title, 'rich');
@@ -302,11 +332,13 @@ async function parseReferenceValues(
   const formula = textContent(firstDescendant(node, 'f'));
   const resolved = await resolveData(context, formula, cacheValues.map((point) => point.label ?? point.value ?? ''));
   return {
-    values: resolved.values.map((value) => {
+    values: resolved.values.map((value, index) => {
       const numeric = typeof value === 'number' ? value : Number(value);
+      const cached = cacheValues[index];
       return {
         label: String(value),
-        ...(Number.isFinite(numeric) ? { value: numeric } : {})
+        ...(Number.isFinite(numeric) ? { value: numeric } : {}),
+        ...(cached?.levels ? { levels: cached.levels } : {})
       };
     }),
     diagnostics: resolved.diagnostics
@@ -326,7 +358,7 @@ async function parseCategoryValues(
   return parseReferenceValues(node, 'numCache', context);
 }
 
-function parseValues(cache: XmlNode | undefined): { label?: string; value?: number }[] {
+function parseValues(cache: XmlNode | undefined): CategoryValue[] {
   if (!cache) {
     return [];
   }
@@ -343,7 +375,8 @@ function parseValues(cache: XmlNode | undefined): { label?: string; value?: numb
       };
     })
     .sort((left, right) => left.index - right.index)
-    .map(({ label, value }) => ({
+    .map(({ index, label, value }) => ({
+      index,
       ...(label === undefined ? {} : { label }),
       ...(value === undefined ? {} : { value })
     }));
@@ -403,10 +436,12 @@ function parseLegend(chart: XmlNode): ChartLegend | undefined {
   }
 
   const layout = parseManualLayout(legend);
+  const style = parseShapeStyle(child(legend, 'spPr'));
   return {
     position: normalizeLegendPosition(valAttr(child(legend, 'legendPos'))),
     overlay: parseBooleanVal(child(legend, 'overlay')) ?? false,
-    ...(layout ? { layout } : {})
+    ...(layout ? { layout } : {}),
+    ...(style ? { style } : {})
   };
 }
 
@@ -414,12 +449,14 @@ function parseChartGroup(type: string, node: XmlNode): ChartGroup {
   const dataLabels = parseDataLabels(node);
   const grouping = parseGrouping(node);
   const varyColors = parseBooleanVal(child(node, 'varyColors'));
+  const scatterStyle = parseScatterStyle(node);
   const group: {
     type: string;
     axisIds: string[];
     grouping?: ChartGrouping;
     varyColors?: boolean;
     dataLabels?: ChartDataLabels;
+    scatterStyle?: ChartScatterStyle;
   } = {
     type: normalizeChartType(type, node),
     axisIds: parseAxisIds(node)
@@ -432,6 +469,9 @@ function parseChartGroup(type: string, node: XmlNode): ChartGroup {
   }
   if (dataLabels) {
     group.dataLabels = dataLabels;
+  }
+  if (scatterStyle) {
+    group.scatterStyle = scatterStyle;
   }
   return group;
 }
@@ -526,6 +566,8 @@ function parseAxes(plotArea: XmlNode, styles: readonly { readonly axisId?: strin
       crossesAxisId?: string;
       numberFormat?: string;
       style?: ChartAxisStyle;
+      majorGridLine?: ChartLineStyle;
+      minorGridLine?: ChartLineStyle;
       scaling: ChartAxisScaling;
     } = {
       id,
@@ -548,8 +590,56 @@ function parseAxes(plotArea: XmlNode, styles: readonly { readonly axisId?: strin
     if (style) {
       axis.style = style;
     }
+    const majorGridLine = parseLineStyle(child(axisNode, 'majorGridlines'));
+    const minorGridLine = parseLineStyle(child(axisNode, 'minorGridlines'));
+    if (majorGridLine) {
+      axis.majorGridLine = majorGridLine;
+    }
+    if (minorGridLine) {
+      axis.minorGridLine = minorGridLine;
+    }
     return [axis];
   });
+}
+
+function parseShapeStyle(node: XmlNode | undefined): ChartShapeStyle | undefined {
+  if (!node) {
+    return undefined;
+  }
+  const fill = parseFillStyle(node);
+  const line = parseLineStyle(node);
+  return fill || line ? { ...(fill ? { fill } : {}), ...(line ? { line } : {}) } : undefined;
+}
+
+function parseFillStyle(node: XmlNode): ChartFillStyle | undefined {
+  if (child(node, 'noFill')) {
+    return { kind: 'none' };
+  }
+  const color = parseSolidFillColor(child(node, 'solidFill'));
+  return color ? { kind: 'solid', color } : undefined;
+}
+
+function parseLineStyle(node: XmlNode | undefined): ChartLineStyle | undefined {
+  const line = node?.localName === 'ln' ? node : child(node ?? emptyNode, 'ln');
+  if (!line) {
+    return undefined;
+  }
+  const color = parseSolidFillColor(child(line, 'solidFill'));
+  const width = Number(attr(line, 'w'));
+  const dash = valAttr(child(line, 'prstDash'));
+  const noFill = Boolean(child(line, 'noFill'));
+  const style: ChartLineStyle = {
+    ...(color ? { color } : {}),
+    ...(Number.isFinite(width) ? { width: width / 12700 } : {}),
+    ...(dash ? { dash } : {}),
+    ...(noFill ? { noFill } : {})
+  };
+  return style.color || style.width !== undefined || style.dash || style.noFill ? style : undefined;
+}
+
+function parseSolidFillColor(solidFill: XmlNode | undefined): string | undefined {
+  const srgb = valAttr(child(solidFill ?? emptyNode, 'srgbClr'));
+  return srgb ? `#${srgb}` : undefined;
 }
 
 function parseAxisScaling(axisNode: XmlNode): ChartAxisScaling {
@@ -629,10 +719,37 @@ function parseDataLabels(node: XmlNode): ChartDataLabels | undefined {
   return result;
 }
 
-function parseMultiLevelStringValues(cache: XmlNode): { label?: string; value?: number }[] {
+function parseMultiLevelStringValues(cache: XmlNode): CategoryValue[] {
   const levels = children(cache, 'lvl');
-  const lastLevel = levels.at(-1);
-  return parseValues(lastLevel);
+  const parsedLevels = levels.map((level) => parseValues(level));
+  const leafValues = parsedLevels[0] ?? [];
+  return leafValues.map((leaf) => {
+    const pointLevels = parsedLevels
+      .map((level) => labelForLevelIndex(level, leaf.index ?? 0))
+      .filter((label): label is string => label !== undefined);
+    return {
+      ...leaf,
+      ...(pointLevels.length > 1 ? { levels: pointLevels } : {})
+    };
+  });
+}
+
+function labelForLevelIndex(level: readonly CategoryValue[], index: number): string | undefined {
+  let matched: CategoryValue | undefined;
+  for (const value of level) {
+    if ((value.index ?? 0) <= index) {
+      matched = value;
+    }
+  }
+  return matched?.label;
+}
+
+function parseScatterStyle(node: XmlNode): ChartScatterStyle | undefined {
+  const value = valAttr(child(node, 'scatterStyle'));
+  if (value === 'line' || value === 'lineMarker' || value === 'marker' || value === 'smoothMarker' || value === 'smooth') {
+    return value;
+  }
+  return undefined;
 }
 
 function axisKind(localName: string) {

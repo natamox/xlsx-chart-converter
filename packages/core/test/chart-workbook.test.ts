@@ -153,6 +153,60 @@ describe('workbook facade', () => {
     });
   });
 
+  it('parses direct chart text, default categories, multi-level categories, and point metadata', async () => {
+    const workbook = await openWorkbook({ path: fixturePath });
+
+    const line = await workbook.getChartModel('chart-chart1');
+    const pie = await workbook.getChartModel('chart-chart2');
+    await workbook.close();
+
+    expect(line.series.map((series) => series.name)).toEqual(['1st Column', '2nd Column']);
+    expect(line.diagnostics.map((diagnostic) => diagnostic.code)).not.toContain('DATA_REFERENCE_UNRESOLVED');
+    expect(pie.title).toBe('Pie Chart TitleThingy');
+    expect(pie.series[0]?.points.map((point) => point.category)).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(pie.series[0]?.points.every((point) => point.explosion === 25)).toBe(true);
+  });
+
+  it('keeps multi-level category labels in Chart IR', async () => {
+    const workbook = await openWorkbook({
+      path: path.resolve(import.meta.dirname, '../../../fixtures/workbooks/apache-poi/WithChartSheet.xlsx')
+    });
+
+    const model = await workbook.getChartModel('chart-chart1');
+
+    await workbook.close();
+    expect(model.title).toBeUndefined();
+    expect(model.series[0]?.points.map((point) => point.category)).toEqual([
+      'Sum of Cost',
+      'Sum of Revenue',
+      'Sum of Cost',
+      'Sum of Revenue',
+      'Sum of Cost',
+      'Sum of Revenue'
+    ]);
+    expect(model.series[0]?.points.map((point) => point.categoryLevels)).toEqual([
+      ['Sum of Cost', '2005'],
+      ['Sum of Revenue', '2005'],
+      ['Sum of Cost', '2006'],
+      ['Sum of Revenue', '2006'],
+      ['Sum of Cost', '2007'],
+      ['Sum of Revenue', '2007']
+    ]);
+  });
+
+  it('uses point indexes as categories when OOXML omits category references', async () => {
+    const workbook = await openWorkbook({
+      path: path.resolve(import.meta.dirname, '../../../fixtures/workbooks/apache-poi/60255_extra_drawingparts.xlsx')
+    });
+
+    const model = await workbook.getChartModel('chart-chart1');
+
+    await workbook.close();
+    expect(model.series.map((series) => series.name)).toEqual(['soap', 'shampoo']);
+    expect(model.series[0]?.points.map((point) => point.category)).toEqual(['1', '2', '3', '4']);
+    expect(model.series[1]?.points.map((point) => point.category)).toEqual(['1', '2', '3', '4']);
+  });
+
   it('returns diagnostics for damaged drawing and chart relationships', async () => {
     const workbook = await openWorkbook(await createDamagedRelationshipWorkbook());
 
@@ -201,7 +255,7 @@ describe('workbook facade', () => {
     await workbook.close();
     expect(cacheOnly.series[0]?.points.map((point) => point.value)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(exceljsFirst.series[0]?.points).toEqual([]);
-    expect(exceljsFirst.series[1]?.points.map((point) => point.category)).toEqual(['101', '102', '103', '104', '105', '106']);
+    expect(exceljsFirst.series[1]?.points.map((point) => point.category)).toEqual(['1', '2', '3', '4', '5', '6']);
     expect(exceljsFirst.series[1]?.points.map((point) => point.value)).toEqual([101, 102, 103, 104, 105, 106]);
   });
 
@@ -238,9 +292,7 @@ describe('workbook facade', () => {
 
     await workbook.close();
     expect(model.series[0]?.points).toEqual([]);
-    expect(model.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
-      expect.arrayContaining(['DATA_REFERENCE_UNRESOLVED'])
-    );
+    expect(model.diagnostics.map((diagnostic) => diagnostic.code)).not.toContain('DATA_REFERENCE_UNRESOLVED');
   });
 
   it('emits diagnostics when ExcelJS formula results may be stale', async () => {

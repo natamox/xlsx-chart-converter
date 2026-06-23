@@ -64,6 +64,7 @@ export interface ChartLegend {
   readonly overlay: boolean;
   readonly layout?: ChartManualLayout;
   readonly textStyle?: ChartTextStyle;
+  readonly style?: ChartShapeStyle;
 }
 
 export interface ChartPlotArea {
@@ -92,7 +93,10 @@ export interface ChartGroup {
   readonly grouping?: ChartGrouping;
   readonly varyColors?: boolean;
   readonly dataLabels?: ChartDataLabels;
+  readonly scatterStyle?: ChartScatterStyle;
 }
+
+export type ChartScatterStyle = 'line' | 'lineMarker' | 'marker' | 'smoothMarker' | 'smooth';
 
 export interface ChartStyle {
   readonly chartArea?: ChartShapeStyle;
@@ -167,6 +171,8 @@ export interface ChartAxis {
   readonly position?: ChartAxisPosition;
   readonly title?: string;
   readonly style?: ChartAxisStyle;
+  readonly majorGridLine?: ChartLineStyle;
+  readonly minorGridLine?: ChartLineStyle;
   readonly crossesAxisId?: string;
   readonly numberFormat?: string;
   readonly scaling?: ChartAxisScaling;
@@ -193,9 +199,11 @@ export interface ChartDataLabels {
 
 export interface ChartDataPoint {
   readonly category?: string;
+  readonly categoryLevels?: readonly string[];
   readonly x?: string | number;
   readonly y?: number;
   readonly value?: number;
+  readonly explosion?: number;
 }
 
 export interface ChartSeries {

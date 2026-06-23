@@ -1,4 +1,4 @@
-import type { ChartAxis, ChartGroup, ChartManualLayout, ChartModel, ChartSeries, ChartTextStyle } from '@natamox/excel-chart-core';
+import type { ChartAxis, ChartGroup, ChartManualLayout, ChartModel, ChartSeries, ChartShapeStyle, ChartTextStyle } from '@natamox/excel-chart-core';
 import type { ECBasicOption } from 'echarts/types/dist/shared.js';
 import { axisPairForSeries, mapCartesianAxes } from './cartesian-axis-mapper.js';
 import { mapCartesianSeries, mapPieSeries } from './series-mappers/index.js';
@@ -17,11 +17,12 @@ export function buildEChartsOption(model: ChartModel): EChartsOptionBuildResult 
 function buildCartesianOption(model: ChartModel): ECBasicOption {
   const scatter = model.chartTypes.includes('scatter');
   const categories = collectCategories(model.series);
+  const categoryLabels = collectCategoryLabels(model.series);
   const percentAxisIds = collectPercentStackedAxisIds(model);
-  const axes = mapCartesianAxes(model.axes, categories, scatter, [
+  const axes = mapCartesianAxes(model.axes, categories, categoryLabels, scatter, [
     ...model.series.map((series) => series.axisIds),
     ...(model.plotArea?.chartGroups.map((group) => group.axisIds) ?? [])
-  ], percentAxisIds);
+  ], percentAxisIds, model.series);
   const seriesGroups = model.series.map((series) => chartGroupForSeries(model, series));
   const percentStackedTotals = collectPercentStackedTotals(model.series, seriesGroups);
 
@@ -29,7 +30,7 @@ function buildCartesianOption(model: ChartModel): ECBasicOption {
     title: titleOption(model),
     legend: legendOption(model),
     grid: gridOption(model),
-    ...(model.style?.chartArea?.fill?.color ? { backgroundColor: model.style.chartArea.fill.color } : {}),
+    ...chartAreaOption(model),
     xAxis: axes.xAxis,
     yAxis: axes.yAxis,
     series: model.series.map((series, index) => {
@@ -45,6 +46,7 @@ function buildCartesianOption(model: ChartModel): ECBasicOption {
         xAxisIndex: axisPair.xAxisIndex,
         yAxisIndex: axisPair.yAxisIndex,
         ...(group?.grouping ? { grouping: group.grouping } : {}),
+        ...(group?.scatterStyle ? { scatterStyle: group.scatterStyle } : {}),
         ...(labels ? { labels } : {}),
         ...(valueAxis?.numberFormat ? { valueNumberFormat: valueAxis.numberFormat } : {}),
         ...(model.style?.series?.[index] ? { style: model.style.series[index] } : {}),
@@ -64,7 +66,7 @@ function buildPieOption(model: ChartModel, doughnut: boolean): ECBasicOption {
   return {
     title: titleOption(model),
     legend: legendOption(model, true),
-    ...(model.style?.chartArea?.fill?.color ? { backgroundColor: model.style.chartArea.fill.color } : {}),
+    ...chartAreaOption(model),
     series: [
       mapPieSeries({
         name: firstSeries?.name ?? model.title ?? model.id,
@@ -105,6 +107,7 @@ function legendOption(model: ChartModel, forceShow = false): Record<string, unkn
     ...(position === 'top' ? { top: 32, left: 'center', orient: 'horizontal' } : {}),
     ...(position === 'bottom' ? { bottom: 4, left: 'center', orient: 'horizontal' } : {}),
     ...(manualBox ? layoutBoxOption(manualBox) : {}),
+    ...shapeStyleOption(model.legend?.style, 'legend'),
     ...textStyleOption(model.legend?.textStyle ?? model.style?.legend)
   };
 }
@@ -118,7 +121,8 @@ function gridOption(model: ChartModel): Record<string, unknown> {
     right: plotArea ? model.width - plotArea.right : legendBox?.position === 'right' || legendBox?.position === 'corner' ? model.width - legendBox.x + 16 : hasRightAxis ? 56 : 24,
     top: plotArea ? plotArea.y : legendBox?.position === 'top' ? legendBox.bottom + 16 : model.title ? 64 : 28,
     bottom: plotArea ? model.height - plotArea.bottom : legendBox?.position === 'bottom' ? model.height - legendBox.y + 16 : 48,
-    containLabel: true
+    containLabel: true,
+    ...plotAreaStyleOption(model)
   };
 }
 
@@ -416,6 +420,47 @@ function textStyleOption(style: ChartTextStyle | undefined): Record<string, unkn
   };
 }
 
+function plotAreaStyleOption(model: ChartModel): Record<string, unknown> {
+  return shapeStyleOption(model.style?.plotArea, 'grid');
+}
+
+function chartAreaOption(model: ChartModel): Record<string, unknown> {
+  const style = model.style?.chartArea;
+  if (!style?.fill && !style?.line) {
+    return {};
+  }
+  return {
+    ...(style.fill?.color ? { backgroundColor: rgba(style.fill.transformedColor ?? style.fill.color, style.fill.alpha) } : {}),
+    ...(style.line?.color && !style.line.noFill ? {
+      graphic: [{
+        type: 'rect',
+        left: 0,
+        top: 0,
+        shape: { width: model.width, height: model.height },
+        style: {
+          fill: 'transparent',
+          stroke: rgba(style.line.transformedColor ?? style.line.color, style.line.alpha),
+          lineWidth: style.line.width ?? 1
+        },
+        silent: true,
+        z: -10
+      }]
+    } : {})
+  };
+}
+
+function shapeStyleOption(style: ChartShapeStyle | undefined, target: 'grid' | 'legend'): Record<string, unknown> {
+  if (!style?.fill && !style?.line) {
+    return {};
+  }
+  const backgroundKey = target === 'grid' ? 'backgroundColor' : 'backgroundColor';
+  return {
+    ...(style.fill?.color ? { [backgroundKey]: rgba(style.fill.transformedColor ?? style.fill.color, style.fill.alpha) } : {}),
+    ...(style.line?.color && !style.line.noFill ? { borderColor: rgba(style.line.transformedColor ?? style.line.color, style.line.alpha) } : {}),
+    ...(style.line?.width === undefined ? {} : { borderWidth: style.line.width })
+  };
+}
+
 function rgba(color: string, alpha: number | undefined): string {
   return alpha === undefined ? color : `${color}${Math.round(alpha * 255).toString(16).padStart(2, '0').toUpperCase()}`;
 }
@@ -425,6 +470,11 @@ function collectCategories(series: readonly ChartSeries[]): string[] {
   return firstWithCategories?.points.map((point, index) =>
     point.category ?? String(point.x ?? index + 1)
   ) ?? [];
+}
+
+function collectCategoryLabels(series: readonly ChartSeries[]): readonly (readonly string[] | undefined)[] {
+  const firstWithCategories = series.find((item) => item.points.some((point) => point.category !== undefined));
+  return firstWithCategories?.points.map((point) => point.categoryLevels) ?? [];
 }
 
 function chartGroupForSeries(model: ChartModel, series: ChartSeries): ChartGroup | undefined {

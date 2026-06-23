@@ -4,7 +4,7 @@ import { buildEChartsOption } from '../src/option-builder.js';
 import type { ChartModel } from '@natamox/excel-chart-core';
 
 type OptionAxis = Record<string, unknown> & {
-  axisLabel?: { formatter: (value: number) => string };
+  axisLabel?: { formatter: (value: number | string, index?: number) => string };
 };
 type OptionSeries = Record<string, unknown> & {
   label?: { formatter: (item: { name?: string; seriesName?: string; value: number; percent?: number }) => string };
@@ -47,6 +47,95 @@ describe('buildEChartsOption', () => {
     expect(option.xAxis).toMatchObject([{ type: 'value' }]);
     expect(option.yAxis).toMatchObject([{ type: 'value' }]);
     expect(option.series).toMatchObject([{ type: 'scatter', data: [[1, 3], [2, 8]] }]);
+  });
+
+  it('infers nice value axis ranges while preserving General decimal labels', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      chartTypes: ['scatter'],
+      axes: [
+        { id: 'x', kind: 'value', position: 'bottom', numberFormat: 'General' },
+        { id: 'y', kind: 'value', position: 'left', numberFormat: 'General' }
+      ],
+      plotArea: { chartGroups: [{ type: 'scatter', axisIds: ['x', 'y'] }] },
+      series: [{
+        name: 'Y',
+        chartType: 'scatter',
+        axisIds: ['x', 'y'],
+        points: [{ x: 0, y: 0.5 }, { x: 1, y: 1.5 }]
+      }]
+    }).option;
+
+    expect(option.xAxis).toMatchObject([{ min: 0, max: 1.2, interval: 0.2 }]);
+    expect(option.yAxis).toMatchObject([{ min: 0, max: 2, interval: 0.5 }]);
+    expect(firstOptionAxis(option.xAxis).axisLabel?.formatter).toBeUndefined();
+  });
+
+  it('maps scatter line marker style with visible lines to line series with numeric pairs', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      chartTypes: ['scatter'],
+      axes: [
+        { id: 'x', kind: 'value', position: 'bottom' },
+        { id: 'y', kind: 'value', position: 'left' }
+      ],
+      plotArea: { chartGroups: [{ type: 'scatter', axisIds: ['x', 'y'], scatterStyle: 'lineMarker' }] },
+      style: { series: [{ line: { color: '#5B9BD5', width: 1.5 } }] },
+      series: [{
+        name: 'Observations',
+        chartType: 'scatter',
+        axisIds: ['x', 'y'],
+        points: [{ x: 1, y: 7.2 }, { x: 2, y: 1.9 }]
+      }]
+    }).option;
+
+    expect(option.series).toMatchObject([{ type: 'line', data: [[1, 7.2], [2, 1.9]] }]);
+  });
+
+  it('keeps scatter line marker charts as points when OOXML line is noFill', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      chartTypes: ['scatter'],
+      axes: [
+        { id: 'x', kind: 'value', position: 'bottom' },
+        { id: 'y', kind: 'value', position: 'left' }
+      ],
+      plotArea: { chartGroups: [{ type: 'scatter', axisIds: ['x', 'y'], scatterStyle: 'lineMarker' }] },
+      style: { series: [{ line: { noFill: true } }] },
+      series: [{
+        name: 'Y',
+        chartType: 'scatter',
+        axisIds: ['x', 'y'],
+        points: [{ x: 0, y: 0.5 }, { x: 1, y: 1.5 }]
+      }]
+    }).option;
+
+    expect(option.series).toMatchObject([{ type: 'scatter', data: [[0, 0.5], [1, 1.5]] }]);
+  });
+
+  it('formats multi-level category labels as stacked axis text', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      chartTypes: ['column'],
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        { id: 'val', kind: 'value', position: 'left' }
+      ],
+      plotArea: { chartGroups: [{ type: 'column', axisIds: ['cat', 'val'] }] },
+      series: [{
+        name: 'Total',
+        chartType: 'column',
+        axisIds: ['cat', 'val'],
+        points: [
+          { category: 'Sum of Cost', categoryLevels: ['Sum of Cost', '2005'], value: 1 },
+          { category: 'Sum of Revenue', categoryLevels: ['Sum of Revenue', '2005'], value: 2 }
+        ]
+      }]
+    }).option;
+
+    const xAxis = firstOptionAxis(option.xAxis);
+    expect(xAxis.axisLabel?.formatter('Sum of Cost', 0)).toBe('Sum of Cost\n2005');
+    expect(xAxis.axisLabel?.formatter('Sum of Revenue', 1)).toBe('Sum of Revenue\n2005');
   });
 
   it('reserves plot area space for non-overlay right legends', () => {
@@ -186,6 +275,23 @@ describe('buildEChartsOption', () => {
       data: [{ name: 'A', value: 4 }, { name: 'B', value: 6 }]
     }]);
     expect(firstOptionSeries(option.series).label?.formatter).toEqual(expect.any(Function));
+  });
+
+  it('maps pie point explosion to selected offsets', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      chartTypes: ['pie'],
+      plotArea: { chartGroups: [{ type: 'pie', axisIds: [] }] },
+      series: [{
+        name: 'Share',
+        chartType: 'pie',
+        points: [{ category: '1', value: 10, explosion: 25 }]
+      }]
+    }).option;
+
+    expect(firstOptionSeries(option.series).data).toMatchObject([
+      { name: '1', value: 10, selected: true, selectedOffset: 25 }
+    ]);
   });
 
   it('reserves pie area space for non-overlay right legends', () => {
@@ -477,6 +583,7 @@ describe('buildEChartsOption', () => {
       chartTypes: ['column'],
       style: {
         chartArea: { fill: { color: '#F2F2F2' } },
+        plotArea: { fill: { color: '#C0C0C0' }, line: { color: '#808080', width: 1 } },
         series: [{ fill: { color: '#4472C4', alpha: 0.5 }, line: { color: '#111111', width: 1.5 } }]
       },
       axes: [
@@ -492,6 +599,11 @@ describe('buildEChartsOption', () => {
     }).option;
 
     expect(option.backgroundColor).toBe('#F2F2F2');
+    expect(option.grid).toMatchObject({
+      backgroundColor: '#C0C0C0',
+      borderColor: '#808080',
+      borderWidth: 1
+    });
     expect(option.series).toMatchObject([{
       itemStyle: { color: '#4472C480', borderColor: '#111111', borderWidth: 1.5 }
     }]);
@@ -546,6 +658,35 @@ describe('buildEChartsOption', () => {
       itemStyle: { color: '#00AA00' },
       lineStyle: { color: '#ED7D31', width: 2, type: 'dashed' },
       data: [2, { value: 4, itemStyle: { color: '#FF0000' } }]
+    }]);
+  });
+
+  it('maps legend border and axis gridline styles', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      chartTypes: ['column'],
+      legend: {
+        position: 'right',
+        overlay: false,
+        style: { fill: { color: '#FFFFFF' }, line: { color: '#000000', width: 0.25 } }
+      },
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        { id: 'val', kind: 'value', position: 'left', majorGridLine: { color: '#808080', width: 0.5 } }
+      ],
+      plotArea: { chartGroups: [{ type: 'column', axisIds: ['cat', 'val'] }] },
+      series: [
+        { name: 'Total', chartType: 'column', axisIds: ['cat', 'val'], points: [{ category: 'A', value: 1 }] }
+      ]
+    }).option;
+
+    expect(option.legend).toMatchObject({
+      backgroundColor: '#FFFFFF',
+      borderColor: '#000000',
+      borderWidth: 0.25
+    });
+    expect(option.yAxis).toMatchObject([{
+      splitLine: { show: true, lineStyle: { color: '#808080', width: 0.5 } }
     }]);
   });
 });

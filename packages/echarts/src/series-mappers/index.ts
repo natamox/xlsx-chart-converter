@@ -6,6 +6,7 @@ import type {
   ChartGrouping,
   ChartMarkerStyle,
   ChartPointStyle,
+  ChartScatterStyle,
   ChartShapeStyle
 } from '@natamox/excel-chart-core';
 
@@ -24,10 +25,11 @@ export interface SeriesMapInput {
   readonly style?: ChartShapeStyle;
   readonly marker?: ChartMarkerStyle;
   readonly pointStyles?: readonly ChartPointStyle[];
+  readonly scatterStyle?: ChartScatterStyle;
 }
 
 export function mapCartesianSeries(input: SeriesMapInput): Record<string, unknown> {
-  const type = seriesType(input.chartType);
+  const type = cartesianSeriesType(input);
   return {
     name: input.name,
     type,
@@ -41,7 +43,7 @@ export function mapCartesianSeries(input: SeriesMapInput): Record<string, unknow
     ...(type === 'scatter' ? {} : { connectNulls: false }),
     animation: false,
     label: dataLabelOption(input.labels, input.valueNumberFormat),
-    data: type === 'scatter'
+    data: input.chartType === 'scatter'
       ? input.points.map((point, index) => mapPointValueObject([toNumber(point.x), toNumber(point.y ?? point.value)], index, input))
       : input.points.map((point, index) => mapPointValue(point, index, input))
   };
@@ -60,6 +62,7 @@ export function mapPieSeries(input: SeriesMapInput & { readonly doughnut: boolea
     data: input.points.map((point, index) => ({
       name: point.category ?? String(index + 1),
       value: point.value ?? point.y ?? null,
+      ...(point.explosion === undefined ? {} : { selected: point.explosion > 0, selectedOffset: point.explosion }),
       ...pointItemStyle(index, input)
     }))
   };
@@ -116,6 +119,18 @@ export function seriesType(chartType: string): 'bar' | 'line' | 'scatter' | 'pie
     return 'pie';
   }
   return 'bar';
+}
+
+function cartesianSeriesType(input: SeriesMapInput): 'bar' | 'line' | 'scatter' {
+  if (input.chartType === 'scatter' && input.scatterStyle && input.scatterStyle !== 'marker' && hasVisibleLine(input.style)) {
+    return 'line';
+  }
+  const type = seriesType(input.chartType);
+  return type === 'pie' ? 'bar' : type;
+}
+
+function hasVisibleLine(style: ChartShapeStyle | undefined): boolean {
+  return Boolean(style?.line && !style.line.noFill);
 }
 
 function stackName(grouping: ChartGrouping | undefined): string | undefined {
