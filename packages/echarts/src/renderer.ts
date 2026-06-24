@@ -24,7 +24,11 @@ export class EChartsSvgRenderer implements SvgRenderer {
     });
 
     try {
-      const builtOption = buildEChartsOption(model).option;
+      const builtOption = buildEChartsOption({
+        ...model,
+        width: context.width,
+        height: context.height
+      }).option;
       const option = {
         animation: false,
         ...(context.fonts?.families?.[0] ? { textStyle: { fontFamily: context.fonts.families[0] } } : {}),

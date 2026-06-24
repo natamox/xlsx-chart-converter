@@ -22,7 +22,7 @@ function buildCartesianOption(model: ChartModel): ECBasicOption {
   const axes = mapCartesianAxes(model.axes, categories, categoryLabels, scatter, [
     ...model.series.map((series) => series.axisIds),
     ...(model.plotArea?.chartGroups.map((group) => group.axisIds) ?? [])
-  ], percentAxisIds, model.series);
+  ], percentAxisIds, model.series, { width: model.width, height: model.height });
   const seriesGroups = model.series.map((series) => chartGroupForSeries(model, series));
   const percentStackedTotals = collectPercentStackedTotals(model.series, seriesGroups);
 

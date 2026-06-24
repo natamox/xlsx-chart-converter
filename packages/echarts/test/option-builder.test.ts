@@ -66,9 +66,66 @@ describe('buildEChartsOption', () => {
       }]
     }).option;
 
-    expect(option.xAxis).toMatchObject([{ min: 0, max: 1.2, interval: 0.2 }]);
-    expect(option.yAxis).toMatchObject([{ min: 0, max: 2, interval: 0.5 }]);
+    expect(option.xAxis).toMatchObject([{ min: 0, max: 1, interval: 0.2 }]);
+    expect(option.yAxis).toMatchObject([{ min: 0, max: 1.6, interval: 0.2 }]);
     expect(firstOptionAxis(option.xAxis).axisLabel?.formatter).toBeUndefined();
+  });
+
+  it('uses chart height to infer denser value axis ticks for positive line charts', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      width: 794,
+      height: 365,
+      chartTypes: ['line'],
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        { id: 'val', kind: 'value', position: 'left', numberFormat: 'General' }
+      ],
+      plotArea: { chartGroups: [{ type: 'line', axisIds: ['cat', 'val'] }] },
+      series: [
+        {
+          name: '1st Column',
+          chartType: 'line',
+          axisIds: ['cat', 'val'],
+          points: [1, 2, 3, 4, 5, 6].map((value) => ({ category: String(value), value }))
+        },
+        {
+          name: '2nd Column',
+          chartType: 'line',
+          axisIds: ['cat', 'val'],
+          points: [10, 12, 14, 9, 15, 17].map((value, index) => ({ category: String(index + 1), value }))
+        }
+      ]
+    }).option;
+
+    expect(option.yAxis).toMatchObject([{ min: 0, max: 18, interval: 2 }]);
+  });
+
+  it('keeps explicit OOXML value axis scaling ahead of inferred data steps', () => {
+    const option = buildEChartsOption({
+      ...baseModel,
+      width: 794,
+      height: 365,
+      chartTypes: ['line'],
+      axes: [
+        { id: 'cat', kind: 'category', position: 'bottom' },
+        {
+          id: 'val',
+          kind: 'value',
+          position: 'left',
+          scaling: { min: 0, max: 25, majorUnit: 5 }
+        }
+      ],
+      plotArea: { chartGroups: [{ type: 'line', axisIds: ['cat', 'val'] }] },
+      series: [{
+        name: '2nd Column',
+        chartType: 'line',
+        axisIds: ['cat', 'val'],
+        points: [10, 12, 14, 9, 15, 17].map((value, index) => ({ category: String(index + 1), value }))
+      }]
+    }).option;
+
+    expect(option.yAxis).toMatchObject([{ min: 0, max: 25, interval: 5 }]);
   });
 
   it('maps scatter line marker style with visible lines to line series with numeric pairs', () => {

@@ -13,6 +13,11 @@ export interface AxisLocation {
   readonly index: number;
 }
 
+export interface AxisLayout {
+  readonly width: number;
+  readonly height: number;
+}
+
 export function mapCartesianAxes(
   axes: readonly ChartAxis[],
   categories: readonly string[],
@@ -20,7 +25,8 @@ export function mapCartesianAxes(
   scatter: boolean,
   axisIdPairs: readonly (readonly string[] | undefined)[] = [],
   percentAxisIds: ReadonlySet<string> = new Set(),
-  series: readonly ChartSeries[] = []
+  series: readonly ChartSeries[] = [],
+  layout: AxisLayout = { width: 640, height: 360 }
 ): AxisMap {
   const inferred = inferAxisDimensions(axisIdPairs);
   const xCandidates = axes.filter((axis) => axisDimension(axis, scatter, inferred) === 'x');
@@ -33,8 +39,8 @@ export function mapCartesianAxes(
   yAxes.forEach((axis, index) => axisIndexById.set(axis.id, { dimension: 'y', index }));
 
   return {
-    xAxis: xAxes.map((axis) => axisOption(axis, scatter ? undefined : categories, categoryLabels, scatter, false, axisValueExtent(axis, 'x', series))),
-    yAxis: yAxes.map((axis) => axisOption(axis, undefined, categoryLabels, true, percentAxisIds.has(axis.id), axisValueExtent(axis, 'y', series))),
+    xAxis: xAxes.map((axis) => axisOption(axis, scatter ? undefined : categories, categoryLabels, scatter, false, axisValueExtent(axis, 'x', series, layout))),
+    yAxis: yAxes.map((axis) => axisOption(axis, undefined, categoryLabels, true, percentAxisIds.has(axis.id), axisValueExtent(axis, 'y', series, layout))),
     axisIndexById
   };
 }
@@ -105,7 +111,12 @@ interface AxisExtent {
   readonly interval: number;
 }
 
-function axisValueExtent(axis: ChartAxis, dimension: 'x' | 'y', series: readonly ChartSeries[]): AxisExtent | undefined {
+function axisValueExtent(
+  axis: ChartAxis,
+  dimension: 'x' | 'y',
+  series: readonly ChartSeries[],
+  layout: AxisLayout
+): AxisExtent | undefined {
   if (axis.kind !== 'value' || axis.scaling?.min !== undefined || axis.scaling?.max !== undefined) {
     return undefined;
   }
@@ -118,7 +129,7 @@ function axisValueExtent(axis: ChartAxis, dimension: 'x' | 'y', series: readonly
   if (values.length === 0) {
     return undefined;
   }
-  return niceExtent(Math.min(...values), Math.max(...values));
+  return niceExtent(Math.min(...values), Math.max(...values), targetTickCount(dimension, layout));
 }
 
 function numeric(value: unknown): number[] {
@@ -126,7 +137,7 @@ function numeric(value: unknown): number[] {
   return Number.isFinite(number) ? [number] : [];
 }
 
-function niceExtent(rawMin: number, rawMax: number): AxisExtent | undefined {
+function niceExtent(rawMin: number, rawMax: number, targetTicks: number): AxisExtent | undefined {
   if (!Number.isFinite(rawMin) || !Number.isFinite(rawMax)) {
     return undefined;
   }
@@ -137,10 +148,19 @@ function niceExtent(rawMin: number, rawMax: number): AxisExtent | undefined {
   }
   const includeZeroMin = rawMin >= 0 ? 0 : rawMin;
   const range = rawMax - includeZeroMin;
-  const interval = niceStep(range / 5);
+  const interval = niceStep(range / targetTicks);
   const min = rawMin >= 0 ? 0 : Math.floor(rawMin / interval) * interval;
-  const max = Math.ceil(rawMax / interval) * interval + interval;
+  const max = Math.ceil(rawMax / interval) * interval;
   return { min: roundScale(min), max: roundScale(max), interval: roundScale(interval) };
+}
+
+function targetTickCount(dimension: 'x' | 'y', layout: AxisLayout): number {
+  if (dimension === 'x') {
+    return 5;
+  }
+  const axisLength = dimension === 'y' ? layout.height : layout.width;
+  const ticks = Math.floor(axisLength / 36);
+  return Math.min(12, Math.max(4, ticks));
 }
 
 function niceStep(value: number): number {
