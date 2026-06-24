@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@natamox/xlsx-chart-converter-core": ["packages/core/src/index.ts"],
+      "@natamox/xlsx-chart-converter-echarts": ["packages/echarts/src/index.ts"],
+      "@natamox/xlsx-chart-converter-resvg": ["packages/resvg/src/index.ts"],
+      "@natamox/xlsx-chart-converter-svg": ["packages/svg/src/index.ts"]
+    }
+  }
+}
